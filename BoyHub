@@ -1,11 +1,12 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V12 (DROPDOWN FIXED)
+-- BOYHUB MEGA LIBRARY V14 (SMOOTH TOGGLE)
 -- ==========================================
 
 local AbangLibrary = {}
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService") -- Wajib ditambah buat animasi geser
 
 local function MakeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
@@ -48,12 +49,24 @@ function AbangLibrary:CreateWindow(Settings)
     end
     AbangLibrary:Load()
 
+    local p = game.Players.LocalPlayer
+
+    -- LOGO MINIMIZE
+    local MiniLogo = Instance.new("ImageButton")
+    MiniLogo.Size = UDim2.new(0, 50, 0, 50); MiniLogo.Position = UDim2.new(0, 20, 0, 20)
+    MiniLogo.Image = "rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"
+    MiniLogo.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MiniLogo.Visible = false; MiniLogo.Parent = ScreenGui
+    Instance.new("UICorner", MiniLogo).CornerRadius = UDim.new(1, 0); MakeDraggable(MiniLogo)
+
+    -- MAIN FRAME
     local Main = Instance.new("Frame")
-    Main.Size = UDim2.new(0, 420, 0, 380); Main.Position = UDim2.new(0.5, -210, 0.5, -190)
+    Main.Size = UDim2.new(0, 420, 0, 320); Main.Position = UDim2.new(0.5, -210, 0.5, -160)
     Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.BorderSizePixel = 0; Main.Parent = ScreenGui; Main.ClipsDescendants = true
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12); MakeDraggable(Main)
 
-    local p = game.Players.LocalPlayer
+    MiniLogo.MouseButton1Click:Connect(function() Main.Visible = true; MiniLogo.Visible = false end)
+
+    -- HEADER
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 65); Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Header.BorderSizePixel = 0; Header.Parent = Main
     Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
@@ -64,11 +77,19 @@ function AbangLibrary:CreateWindow(Settings)
     pImg.BackgroundTransparency = 1; pImg.Parent = Header; Instance.new("UICorner", pImg).CornerRadius = UDim.new(1, 0)
 
     local pName = Instance.new("TextLabel")
-    pName.Size = UDim2.new(1, -70, 0, 20); pName.Position = UDim2.new(0, 65, 0, 12); pName.Text = p.DisplayName; pName.TextColor3 = Color3.fromRGB(255, 255, 255); pName.Font = Enum.Font.GothamBold; pName.TextSize = 14; pName.TextXAlignment = Enum.TextXAlignment.Left; pName.BackgroundTransparency = 1; pName.Parent = Header
+    pName.Size = UDim2.new(1, -140, 0, 20); pName.Position = UDim2.new(0, 65, 0, 12); pName.Text = p.DisplayName; pName.TextColor3 = Color3.fromRGB(255, 255, 255); pName.Font = Enum.Font.GothamBold; pName.TextSize = 16; pName.TextXAlignment = Enum.TextXAlignment.Left; pName.BackgroundTransparency = 1; pName.Parent = Header
 
     local pStatus = Instance.new("TextLabel")
-    pStatus.Size = UDim2.new(1, -70, 0, 20); pStatus.Position = UDim2.new(0, 65, 0, 28); pStatus.Text = "Status: " .. (Settings.UserStatus or "User")
-    pStatus.TextColor3 = Settings.StatusColor or Color3.fromRGB(80, 255, 80); pStatus.Font = Enum.Font.GothamMedium; pStatus.TextSize = 11; pStatus.TextXAlignment = Enum.TextXAlignment.Left; pStatus.BackgroundTransparency = 1; pStatus.Parent = Header
+    pStatus.Size = UDim2.new(1, -140, 0, 20); pStatus.Position = UDim2.new(0, 65, 0, 30); pStatus.Text = "Status: " .. (Settings.UserStatus or "User")
+    pStatus.TextColor3 = Settings.StatusColor or Color3.fromRGB(80, 255, 80); pStatus.Font = Enum.Font.GothamMedium; pStatus.TextSize = 13; pStatus.TextXAlignment = Enum.TextXAlignment.Left; pStatus.BackgroundTransparency = 1; pStatus.Parent = Header
+
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Position = UDim2.new(1, -35, 0, 15); CloseBtn.BackgroundTransparency = 1; CloseBtn.Text = "X"; CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.Parent = Header
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+    local MinBtn = Instance.new("TextButton")
+    MinBtn.Size = UDim2.new(0, 30, 0, 30); MinBtn.Position = UDim2.new(1, -70, 0, 15); MinBtn.BackgroundTransparency = 1; MinBtn.Text = "—"; MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255); MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextSize = 16; MinBtn.Parent = Header
+    MinBtn.MouseButton1Click:Connect(function() Main.Visible = false; MiniLogo.Visible = true end)
 
     local ContentArea = Instance.new("Frame")
     ContentArea.Size = UDim2.new(1, 0, 1, -115); ContentArea.Position = UDim2.new(0, 0, 0, 65); ContentArea.BackgroundTransparency = 1; ContentArea.Parent = Main
@@ -84,7 +105,6 @@ function AbangLibrary:CreateWindow(Settings)
 
     local Window = {}
     Window.TabsCount = 0
-    local FirstTab = nil
 
     function Window:MakeTab(TabSettings)
         Window.TabsCount = Window.TabsCount + 1
@@ -98,7 +118,7 @@ function AbangLibrary:CreateWindow(Settings)
         end)
 
         local NavBtn = Instance.new("TextButton")
-        NavBtn.Size = UDim2.new(0, 100, 0, 35); NavBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); NavBtn.Text = TabSettings.Name; NavBtn.TextColor3 = Color3.fromRGB(150, 150, 150); NavBtn.Font = Enum.Font.GothamBold; NavBtn.Parent = BottomBar; Instance.new("UICorner", NavBtn)
+        NavBtn.Size = UDim2.new(0, 100, 0, 35); NavBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); NavBtn.Text = TabSettings.Name; NavBtn.TextColor3 = Color3.fromRGB(150, 150, 150); NavBtn.Font = Enum.Font.GothamBold; NavBtn.TextSize = 14; NavBtn.Parent = BottomBar; Instance.new("UICorner", NavBtn)
 
         NavBtn.MouseButton1Click:Connect(function()
             for _, v in pairs(ContentArea:GetChildren()) do if v:IsA("ScrollingFrame") then v.Visible = false end end
@@ -107,27 +127,53 @@ function AbangLibrary:CreateWindow(Settings)
         end)
 
         if Window.TabsCount == 1 then
-            Page.Visible = true
-            NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
+            Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255); NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
         end
 
         local Tab = {}
 
         function Tab:AddButton(Cfg)
             local f = Instance.new("TextButton")
-            f.Size = UDim2.new(1, 0, 0, 35); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = Cfg.Name; f.TextColor3 = Color3.fromRGB(255, 255, 255); f.Font = Enum.Font.GothamBold; f.Parent = Page; Instance.new("UICorner", f); f.MouseButton1Click:Connect(Cfg.Callback)
+            f.Size = UDim2.new(1, 0, 0, 40); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = Cfg.Name; f.TextColor3 = Color3.fromRGB(255, 255, 255); f.Font = Enum.Font.GothamBold; f.TextSize = 14; f.Parent = Page; Instance.new("UICorner", f); f.MouseButton1Click:Connect(Cfg.Callback)
         end
 
+        -- [ PERBAIKAN ANIMASI TOGGLE ]
         function Tab:AddToggle(Cfg)
             local state = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or false
             AbangLibrary.Pengaturan[Cfg.Flag] = state
+            
             local f = Instance.new("TextButton")
-            f.Size = UDim2.new(1, 0, 0, 40); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = "   "..Cfg.Name; f.TextColor3 = Color3.fromRGB(240,240,240); f.Font = Enum.Font.Gotham; f.TextXAlignment = Enum.TextXAlignment.Left; f.Parent = Page; Instance.new("UICorner", f)
-            local s = Instance.new("Frame"); s.Size = UDim2.new(0, 30, 0, 16); s.Position = UDim2.new(1, -45, 0.5, -8); s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80); s.Parent = f; Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
+            f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = "   "..Cfg.Name; f.TextColor3 = Color3.fromRGB(240,240,240); f.Font = Enum.Font.Gotham; f.TextSize = 14; f.TextXAlignment = Enum.TextXAlignment.Left; f.Parent = Page; Instance.new("UICorner", f)
+            
+            -- Background Toggle (Merah/Hijau)
+            local s = Instance.new("Frame")
+            s.Size = UDim2.new(0, 40, 0, 20); s.Position = UDim2.new(1, -55, 0.5, -10)
+            s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
+            s.Parent = f; Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
+            
+            -- Bulatan Putih (Indikator)
+            local circle = Instance.new("Frame")
+            circle.Size = UDim2.new(0, 14, 0, 14)
+            circle.Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+            circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            circle.Parent = s; Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+            
+            -- Logika Klik + Animasi Smooth
             f.MouseButton1Click:Connect(function()
-                state = not state; AbangLibrary.Pengaturan[Cfg.Flag] = state; AbangLibrary:Save()
-                s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80); Cfg.Callback(state)
+                state = not state
+                AbangLibrary.Pengaturan[Cfg.Flag] = state
+                AbangLibrary:Save()
+                
+                -- Setup Animasi (Kecepatan 0.2 Detik, Tipe Quad)
+                local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local targetColor = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
+                local targetPos = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+                
+                -- Jalankan Animasi
+                TweenService:Create(s, tweenInfo, {BackgroundColor3 = targetColor}):Play()
+                TweenService:Create(circle, tweenInfo, {Position = targetPos}):Play()
+                
+                Cfg.Callback(state)
             end)
             task.spawn(function() Cfg.Callback(state) end)
         end
@@ -135,9 +181,9 @@ function AbangLibrary:CreateWindow(Settings)
         function Tab:AddSlider(Cfg)
             local val = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Cfg.Min
             AbangLibrary.Pengaturan[Cfg.Flag] = val
-            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
-            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, -20, 0, 20); l.Position = UDim2.new(0, 10, 0, 5); l.BackgroundTransparency = 1; l.Text = Cfg.Name.." : "..val; l.TextColor3 = Color3.fromRGB(255,255,255); l.Font = Enum.Font.Gotham; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
-            local bar = Instance.new("TextButton"); bar.Size = UDim2.new(0.9, 0, 0, 5); bar.Position = UDim2.new(0.05, 0, 0.7, 0); bar.BackgroundColor3 = Color3.fromRGB(20,20,20); bar.Text = ""; bar.Parent = f
+            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 50); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, -20, 0, 25); l.Position = UDim2.new(0, 10, 0, 5); l.BackgroundTransparency = 1; l.Text = Cfg.Name.." : "..val; l.TextColor3 = Color3.fromRGB(255,255,255); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+            local bar = Instance.new("TextButton"); bar.Size = UDim2.new(0.9, 0, 0, 6); bar.Position = UDim2.new(0.05, 0, 0.7, 0); bar.BackgroundColor3 = Color3.fromRGB(20,20,20); bar.Text = ""; bar.Parent = f
             local fill = Instance.new("Frame"); fill.Size = UDim2.new((val-Cfg.Min)/(Cfg.Max-Cfg.Min), 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(80, 160, 255); fill.Parent = bar
             local function up(i)
                 local p = math.clamp((i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
@@ -158,38 +204,25 @@ function AbangLibrary:CreateWindow(Settings)
             AbangLibrary.Pengaturan[Cfg.Flag] = Default
             
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
-            local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = "   " .. Cfg.Name .. " : " .. Default; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = f
+            local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = "   " .. Cfg.Name .. " : " .. Default; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextSize = 14; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = f
             
-            -- [PERBAIKAN DI SINI] Parent diarahkan ke Main GUI, ZIndex dinaikkan
             local Modal = Instance.new("TextButton")
-            Modal.Size = UDim2.new(1, 0, 1, 0)
-            Modal.BackgroundColor3 = Color3.fromRGB(0,0,0)
-            Modal.BackgroundTransparency = 0.5
-            Modal.Visible = false
-            Modal.Text = ""
-            Modal.AutoButtonColor = false
-            Modal.ZIndex = 50 -- Biar nutupin semua elemen di GUI
-            Modal.Parent = Main -- Nempel ke GUI utama
+            Modal.Size = UDim2.new(1, 0, 1, 0); Modal.BackgroundColor3 = Color3.fromRGB(0,0,0); Modal.BackgroundTransparency = 0.5; Modal.Visible = false; Modal.Text = ""; Modal.AutoButtonColor = false; Modal.ZIndex = 50; Modal.Parent = Main
 
             local Box = Instance.new("Frame")
-            Box.Size = UDim2.new(0, 240, 0, 250)
-            Box.Position = UDim2.new(0.5, -120, 0.5, -125) -- Posisi otomatis tengah
-            Box.BackgroundColor3 = Color3.fromRGB(25,25,25)
-            Box.ZIndex = 51
-            Box.Parent = Modal
-            Instance.new("UICorner", Box)
+            Box.Size = UDim2.new(0, 260, 0, 250); Box.Position = UDim2.new(0.5, -130, 0.5, -125); Box.BackgroundColor3 = Color3.fromRGB(25,25,25); Box.ZIndex = 51; Box.Parent = Modal; Instance.new("UICorner", Box)
 
             local Search = Instance.new("TextBox")
-            Search.Size = UDim2.new(1, -20, 0, 30); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Search..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.ZIndex = 52; Search.Parent = Box; Instance.new("UICorner", Search)
+            Search.Size = UDim2.new(1, -20, 0, 35); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Cari..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.TextSize = 14; Search.ZIndex = 52; Search.Parent = Box; Instance.new("UICorner", Search)
             
             local scroll = Instance.new("ScrollingFrame")
-            scroll.Size = UDim2.new(1, -20, 1, -60); scroll.Position = UDim2.new(0, 10, 0, 50); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.ZIndex = 52; scroll.Parent = Box
+            scroll.Size = UDim2.new(1, -20, 1, -65); scroll.Position = UDim2.new(0, 10, 0, 55); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.ZIndex = 52; scroll.Parent = Box
             local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0, 5); layout.Parent = scroll
             
             local function Refresh(filter)
                 for _, v in pairs(scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
                 for _, opt in pairs(Options) do if filter == "" or string.find(string.lower(opt), string.lower(filter)) then
-                    local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 30); o.BackgroundColor3 = Color3.fromRGB(40, 40, 40); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.ZIndex = 53; o.Parent = scroll; Instance.new("UICorner", o)
+                    local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 35); o.BackgroundColor3 = Color3.fromRGB(40, 40, 40); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.TextSize = 14; o.ZIndex = 53; o.Parent = scroll; Instance.new("UICorner", o)
                     o.MouseButton1Click:Connect(function() btn.Text = "   " .. Cfg.Name .. " : " .. opt; AbangLibrary.Pengaturan[Cfg.Flag] = opt; AbangLibrary:Save(); Cfg.Callback(opt); Modal.Visible = false end)
                 end end
             end
@@ -203,21 +236,21 @@ function AbangLibrary:CreateWindow(Settings)
         function Tab:AddTextbox(Cfg)
             local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or ""
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
-            local l = Instance.new("TextLabel"); l.Size = UDim2.new(0.4, 0, 1, 0); l.Position = UDim2.new(0, 10, 0, 0); l.Text = Cfg.Name; l.TextColor3 = Color3.fromRGB(255, 255, 255); l.BackgroundTransparency = 1; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
-            local tb = Instance.new("TextBox"); tb.Size = UDim2.new(0.5, 0, 0, 25); tb.Position = UDim2.new(0.45, 0, 0.5, -12); tb.BackgroundColor3 = Color3.fromRGB(25, 25, 25); tb.Text = Default; tb.TextColor3 = Color3.fromRGB(80, 160, 255); tb.Parent = f; Instance.new("UICorner", tb)
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(0.4, 0, 1, 0); l.Position = UDim2.new(0, 10, 0, 0); l.Text = Cfg.Name; l.TextColor3 = Color3.fromRGB(255, 255, 255); l.BackgroundTransparency = 1; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+            local tb = Instance.new("TextBox"); tb.Size = UDim2.new(0.5, 0, 0, 30); tb.Position = UDim2.new(0.45, 0, 0.5, -15); tb.BackgroundColor3 = Color3.fromRGB(25, 25, 25); tb.Text = Default; tb.TextColor3 = Color3.fromRGB(80, 160, 255); tb.TextSize = 14; tb.Parent = f; Instance.new("UICorner", tb)
             tb.FocusLost:Connect(function() AbangLibrary.Pengaturan[Cfg.Flag] = tb.Text; AbangLibrary:Save(); Cfg.Callback(tb.Text) end)
             task.spawn(function() Cfg.Callback(Default) end)
         end
 
         function Tab:AddLabel(Text)
-            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = "  " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = Page
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = "  " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = Page
             return {Set = function(_, t) l.Text = "  " .. t end}
         end
 
         function Tab:AddParagraph(Cfg)
-            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 60); f.BackgroundColor3 = Color3.fromRGB(30, 30, 30); f.Parent = Page; Instance.new("UICorner", f)
-            local t = Instance.new("TextLabel"); t.Size = UDim2.new(1, -20, 0, 20); t.Position = UDim2.new(0, 10, 0, 5); t.Text = Cfg.Title or "Info"; t.TextColor3 = Color3.fromRGB(80, 160, 255); t.Font = Enum.Font.GothamBold; t.BackgroundTransparency = 1; t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = f
-            local c = Instance.new("TextLabel"); c.Size = UDim2.new(1, -20, 1, -25); c.Position = UDim2.new(0, 10, 0, 25); c.Text = Cfg.Content or ""; c.TextColor3 = Color3.fromRGB(255, 255, 255); c.Font = Enum.Font.Gotham; c.TextSize = 12; c.TextWrapped = true; c.BackgroundTransparency = 1; c.TextXAlignment = Enum.TextXAlignment.Left; c.TextYAlignment = Enum.TextYAlignment.Top; c.Parent = f
+            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 65); f.BackgroundColor3 = Color3.fromRGB(30, 30, 30); f.Parent = Page; Instance.new("UICorner", f)
+            local t = Instance.new("TextLabel"); t.Size = UDim2.new(1, -20, 0, 20); t.Position = UDim2.new(0, 10, 0, 5); t.Text = Cfg.Title or "Info"; t.TextColor3 = Color3.fromRGB(80, 160, 255); t.Font = Enum.Font.GothamBold; t.TextSize = 15; t.BackgroundTransparency = 1; t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = f
+            local c = Instance.new("TextLabel"); c.Size = UDim2.new(1, -20, 1, -30); c.Position = UDim2.new(0, 10, 0, 25); c.Text = Cfg.Content or ""; c.TextColor3 = Color3.fromRGB(255, 255, 255); c.Font = Enum.Font.Gotham; c.TextSize = 13; c.TextWrapped = true; c.BackgroundTransparency = 1; c.TextXAlignment = Enum.TextXAlignment.Left; c.TextYAlignment = Enum.TextYAlignment.Top; c.Parent = f
             c:GetPropertyChangedSignal("TextBounds"):Connect(function() f.Size = UDim2.new(1, 0, 0, c.TextBounds.Y + 35) end)
         end
 
