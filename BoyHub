@@ -1,5 +1,5 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V19 (REORDERED LAYOUT)
+-- BOYHUB MEGA LIBRARY V20 (AUTO RESET FIX)
 -- ==========================================
 
 local AbangLibrary = {}
@@ -259,17 +259,27 @@ function AbangLibrary:CreateWindow(Settings)
     -- ===============================================
     local pTab = Window:MakeTab({Name = "👤 Player"})
     
-    -- 1. WalkSpeed (Slider -> Toggle)
+    -- 1. WalkSpeed (Slider -> Toggle -> Auto Reset saat OFF)
     local wsTog, wsVal = false, 16
     pTab:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Default = 16, Flag = "H_WS_S", Callback = function(v) wsVal = v end})
-    pTab:AddToggle({Name = "Auto WalkSpeed", Flag = "H_WS_T", Callback = function(v) wsTog = v end})
+    pTab:AddToggle({Name = "Auto WalkSpeed", Flag = "H_WS_T", Callback = function(v) 
+        wsTog = v 
+        if not v and p.Character and p.Character:FindFirstChild("Humanoid") then
+            p.Character.Humanoid.WalkSpeed = 16 -- RESET KE NORMAL
+        end
+    end})
 
-    -- 2. JumpPower (Slider -> Toggle)
+    -- 2. JumpPower (Slider -> Toggle -> Auto Reset saat OFF)
     local jpTog, jpVal = false, 50
     pTab:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Default = 50, Flag = "H_JP_S", Callback = function(v) jpVal = v end})
-    pTab:AddToggle({Name = "Auto JumpPower", Flag = "H_JP_T", Callback = function(v) jpTog = v end})
+    pTab:AddToggle({Name = "Auto JumpPower", Flag = "H_JP_T", Callback = function(v) 
+        jpTog = v 
+        if not v and p.Character and p.Character:FindFirstChild("Humanoid") then
+            p.Character.Humanoid.JumpPower = 50 -- RESET KE NORMAL
+        end
+    end})
 
-    -- 3. Fly / Terbang (Slider -> Toggle) - PINDAH KESINI
+    -- 3. Fly / Terbang (Slider -> Toggle -> Auto Rem & Jatuh Normal saat OFF)
     local flyTog, flySpd = false, 50
     pTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 300, Default = 50, Flag = "H_Fly_S", Callback = function(v) flySpd = v end})
     pTab:AddToggle({Name = "Fly (Terbang)", Flag = "H_Fly_T", Callback = function(v)
@@ -313,6 +323,8 @@ function AbangLibrary:CreateWindow(Settings)
             if hrp:FindFirstChild("BoyFlyBV") then hrp.BoyFlyBV:Destroy() end
             if hrp:FindFirstChild("BoyFlyBG") then hrp.BoyFlyBG:Destroy() end
             hum.PlatformStand = false
+            -- RESET: Buang momentum (biar langsung ngerem dan jatuh pas di-off)
+            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0) 
         end
     end})
 
