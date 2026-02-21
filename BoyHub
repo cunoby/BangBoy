@@ -1,15 +1,11 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V10 (FIXED DISPLAY)
+-- BOYHUB MEGA LIBRARY V11 (100% FIXED)
 -- ==========================================
 
 local AbangLibrary = {}
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
-
-AbangLibrary.Pengaturan = {}
-local FirstTab = nil
-local FirstTabBtn = nil
 
 local function MakeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
@@ -34,6 +30,8 @@ function AbangLibrary:CreateWindow(Settings)
     local HubName = Settings.Name or "BoyHub"
     local SaveConfig = Settings.SaveConfig or false
     local ConfigFolder = Settings.ConfigFolder or "BoyHubConfig"
+    
+    AbangLibrary.Pengaturan = {}
     AbangLibrary.NamaFile = ConfigFolder .. ".json"
     
     if CoreGui:FindFirstChild(HubName) then CoreGui[HubName]:Destroy() end
@@ -50,9 +48,8 @@ function AbangLibrary:CreateWindow(Settings)
     end
     AbangLibrary:Load()
 
-    -- Ukuran ditingkatkan biar gak kepotong (400)
     local Main = Instance.new("Frame")
-    Main.Size = UDim2.new(0, 420, 0, 400); Main.Position = UDim2.new(0.5, -210, 0.5, -200)
+    Main.Size = UDim2.new(0, 420, 0, 380); Main.Position = UDim2.new(0.5, -210, 0.5, -190)
     Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.BorderSizePixel = 0; Main.Parent = ScreenGui; Main.ClipsDescendants = true
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12); MakeDraggable(Main)
 
@@ -84,13 +81,25 @@ function AbangLibrary:CreateWindow(Settings)
     local NavLayout = Instance.new("UIListLayout"); NavLayout.FillDirection = Enum.FillDirection.Horizontal; NavLayout.VerticalAlignment = Enum.VerticalAlignment.Center; NavLayout.Padding = UDim.new(0, 10); NavLayout.Parent = BottomBar
     Instance.new("UIPadding", BottomBar).PaddingLeft = UDim.new(0, 10)
 
+    -- FIX BOTTOM BAR CANVAS SIZE
+    NavLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        BottomBar.CanvasSize = UDim2.new(0, NavLayout.AbsoluteContentSize.X + 20, 0, 0)
+    end)
+
     local Window = {}
+    Window.TabsCount = 0
 
     function Window:MakeTab(TabSettings)
+        Window.TabsCount = Window.TabsCount + 1
+        
         local Page = Instance.new("ScrollingFrame")
         Page.Size = UDim2.new(1, -20, 1, -20); Page.Position = UDim2.new(0, 10, 0, 10); Page.BackgroundTransparency = 1; Page.Visible = false; Page.ScrollBarThickness = 2; Page.Parent = ContentArea
         local PageLayout = Instance.new("UIListLayout"); PageLayout.Padding = UDim.new(0, 8); PageLayout.Parent = Page
-        PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10) end)
+        
+        -- FIX PAGE CANVAS SIZE
+        PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() 
+            Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 15) 
+        end)
 
         local NavBtn = Instance.new("TextButton")
         NavBtn.Size = UDim2.new(0, 100, 0, 35); NavBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); NavBtn.Text = TabSettings.Name; NavBtn.TextColor3 = Color3.fromRGB(150, 150, 150); NavBtn.Font = Enum.Font.GothamBold; NavBtn.Parent = BottomBar; Instance.new("UICorner", NavBtn)
@@ -101,20 +110,20 @@ function AbangLibrary:CreateWindow(Settings)
             Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255); NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
         end)
 
-        -- OTOMATIS BUKA TAB PERTAMA
-        if FirstTab == nil then
-            FirstTab = Page
-            FirstTabBtn = NavBtn
+        -- LOGIKA TAB PERTAMA OTOMATIS TERBUKA (FIXED)
+        if Window.TabsCount == 1 then
             Page.Visible = true
             NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
             NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
         end
 
         local Tab = {}
+
         function Tab:AddButton(Cfg)
             local f = Instance.new("TextButton")
             f.Size = UDim2.new(1, 0, 0, 35); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = Cfg.Name; f.TextColor3 = Color3.fromRGB(255, 255, 255); f.Font = Enum.Font.GothamBold; f.Parent = Page; Instance.new("UICorner", f); f.MouseButton1Click:Connect(Cfg.Callback)
         end
+
         function Tab:AddToggle(Cfg)
             local state = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or false
             AbangLibrary.Pengaturan[Cfg.Flag] = state
@@ -127,6 +136,7 @@ function AbangLibrary:CreateWindow(Settings)
             end)
             task.spawn(function() Cfg.Callback(state) end)
         end
+
         function Tab:AddSlider(Cfg)
             local val = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Cfg.Min
             AbangLibrary.Pengaturan[Cfg.Flag] = val
@@ -146,6 +156,7 @@ function AbangLibrary:CreateWindow(Settings)
             UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end end)
             task.spawn(function() Cfg.Callback(val) end)
         end
+
         function Tab:AddDropdown(Cfg)
             local Options = Cfg.Options or {}
             local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Options[1]
@@ -169,6 +180,7 @@ function AbangLibrary:CreateWindow(Settings)
             Search:GetPropertyChangedSignal("Text"):Connect(function() Refresh(Search.Text) end)
             task.spawn(function() Cfg.Callback(Default) end)
         end
+
         function Tab:AddTextbox(Cfg)
             local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or ""
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
@@ -177,13 +189,21 @@ function AbangLibrary:CreateWindow(Settings)
             tb.FocusLost:Connect(function() AbangLibrary.Pengaturan[Cfg.Flag] = tb.Text; AbangLibrary:Save(); Cfg.Callback(tb.Text) end)
             task.spawn(function() Cfg.Callback(Default) end)
         end
+
+        function Tab:AddLabel(Text)
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = "  " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = Page
+            return {Set = function(_, t) l.Text = "  " .. t end}
+        end
+
+        function Tab:AddParagraph(Cfg)
+            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 60); f.BackgroundColor3 = Color3.fromRGB(30, 30, 30); f.Parent = Page; Instance.new("UICorner", f)
+            local t = Instance.new("TextLabel"); t.Size = UDim2.new(1, -20, 0, 20); t.Position = UDim2.new(0, 10, 0, 5); t.Text = Cfg.Title or "Info"; t.TextColor3 = Color3.fromRGB(80, 160, 255); t.Font = Enum.Font.GothamBold; t.BackgroundTransparency = 1; t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = f
+            local c = Instance.new("TextLabel"); c.Size = UDim2.new(1, -20, 1, -25); c.Position = UDim2.new(0, 10, 0, 25); c.Text = Cfg.Content or ""; c.TextColor3 = Color3.fromRGB(255, 255, 255); c.Font = Enum.Font.Gotham; c.TextSize = 12; c.TextWrapped = true; c.BackgroundTransparency = 1; c.TextXAlignment = Enum.TextXAlignment.Left; c.TextYAlignment = Enum.TextYAlignment.Top; c.Parent = f
+            c:GetPropertyChangedSignal("TextBounds"):Connect(function() f.Size = UDim2.new(1, 0, 0, c.TextBounds.Y + 35) end)
+        end
+
         return Tab
     end
-
-    -- TAB SETTINGS OTOMATIS
-    local st = Window:MakeTab({Name = "⚙️ Settings"})
-    st:AddButton({Name = "Save Config", Callback = function() AbangLibrary:Save() end})
-    st:AddButton({Name = "Close UI", Callback = function() ScreenGui:Destroy() end})
 
     return Window
 end
