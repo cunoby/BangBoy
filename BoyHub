@@ -1,5 +1,5 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V16 (BUILT-IN HACKS)
+-- BOYHUB MEGA LIBRARY V17 (BUG FIX & MOBILE FLY)
 -- ==========================================
 
 local AbangLibrary = {}
@@ -131,10 +131,12 @@ function AbangLibrary:CreateWindow(Settings)
 
         local Tab = {}
 
+        -- BUTTON
         function Tab:AddButton(Cfg)
             local f = Instance.new("TextButton"); f.Size = UDim2.new(1, 0, 0, 40); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = Cfg.Name; f.TextColor3 = Color3.fromRGB(255, 255, 255); f.Font = Enum.Font.GothamBold; f.TextSize = 14; f.Parent = Page; Instance.new("UICorner", f); f.MouseButton1Click:Connect(Cfg.Callback)
         end
 
+        -- TOGGLE
         function Tab:AddToggle(Cfg)
             local state = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or false
             AbangLibrary.Pengaturan[Cfg.Flag] = state
@@ -153,6 +155,7 @@ function AbangLibrary:CreateWindow(Settings)
             task.spawn(function() Cfg.Callback(state) end)
         end
 
+        -- SLIDER
         function Tab:AddSlider(Cfg)
             local val = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Cfg.Min
             AbangLibrary.Pengaturan[Cfg.Flag] = val
@@ -176,8 +179,8 @@ function AbangLibrary:CreateWindow(Settings)
             task.spawn(function() Cfg.Callback(val) end)
         end
 
+        -- DROPDOWN (MULTI & SINGLE)
         function Tab:AddDropdown(Cfg)
-            -- (Sama seperti V15, fitur Dropdown Multi-select)
             local isMulti = Cfg.Multi or false
             local Options = Cfg.Options or {}
             local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default
@@ -220,6 +223,7 @@ function AbangLibrary:CreateWindow(Settings)
             task.spawn(function() if isMulti then Cfg.Callback(Selected) else Cfg.Callback(Selected[1]) end end)
         end
 
+        -- TEXTBOX
         function Tab:AddTextbox(Cfg)
             local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or ""
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
@@ -229,6 +233,13 @@ function AbangLibrary:CreateWindow(Settings)
             task.spawn(function() Cfg.Callback(Default) end)
         end
 
+        -- LABEL (FIXED: INI YANG BIKIN ERROR SEBELUMNYA)
+        function Tab:AddLabel(Text)
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = "  " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = Page
+            return {Set = function(_, t) l.Text = "  " .. t end}
+        end
+
+        -- PARAGRAPH
         function Tab:AddParagraph(Cfg)
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 65); f.BackgroundColor3 = Color3.fromRGB(30, 30, 30); f.Parent = Page; Instance.new("UICorner", f)
             local t = Instance.new("TextLabel"); t.Size = UDim2.new(1, -20, 0, 20); t.Position = UDim2.new(0, 10, 0, 5); t.Text = Cfg.Title or "Info"; t.TextColor3 = Color3.fromRGB(80, 160, 255); t.Font = Enum.Font.GothamBold; t.TextSize = 15; t.BackgroundTransparency = 1; t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = f
@@ -244,13 +255,15 @@ function AbangLibrary:CreateWindow(Settings)
     -- ===============================================
     local pTab = Window:MakeTab({Name = "👤 Player"})
     
+    -- WalkSpeed (Slider dulu, baru Toggle)
     local wsTog, wsVal = false, 16
-    pTab:AddToggle({Name = "Auto WalkSpeed", Flag = "H_WS_T", Callback = function(v) wsTog = v end})
     pTab:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Default = 16, Flag = "H_WS_S", Callback = function(v) wsVal = v end})
+    pTab:AddToggle({Name = "Auto WalkSpeed", Flag = "H_WS_T", Callback = function(v) wsTog = v end})
 
+    -- JumpPower (Slider dulu, baru Toggle)
     local jpTog, jpVal = false, 50
-    pTab:AddToggle({Name = "Auto JumpPower", Flag = "H_JP_T", Callback = function(v) jpTog = v end})
     pTab:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Default = 50, Flag = "H_JP_S", Callback = function(v) jpVal = v end})
+    pTab:AddToggle({Name = "Auto JumpPower", Flag = "H_JP_T", Callback = function(v) jpTog = v end})
 
     local ncTog = false
     pTab:AddToggle({Name = "Noclip (Tembus Tembok)", Flag = "H_NC", Callback = function(v) ncTog = v end})
@@ -258,38 +271,53 @@ function AbangLibrary:CreateWindow(Settings)
     local ijTog = false
     pTab:AddToggle({Name = "Infinite Jump", Flag = "H_IJ", Callback = function(v) ijTog = v end})
 
+    -- MOBILE FRIENDLY FLY FIX
     local flyTog, flySpd = false, 50
+    pTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 300, Default = 50, Flag = "H_Fly_S", Callback = function(v) flySpd = v end})
     pTab:AddToggle({Name = "Fly (Terbang)", Flag = "H_Fly_T", Callback = function(v)
         flyTog = v
         local char = p.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
         local hrp = char.HumanoidRootPart
+        local hum = char.Humanoid
+        
         if flyTog then
-            local bv = Instance.new("BodyVelocity", hrp); bv.Name = "B_Fly"; bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            local bg = Instance.new("BodyGyro", hrp); bg.Name = "B_Gyro"; bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge); bg.CFrame = hrp.CFrame
+            local bv = Instance.new("BodyVelocity")
+            bv.Name = "BoyFlyBV"
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.Velocity = Vector3.new(0, 0, 0)
+            bv.Parent = hrp
+            
+            local bg = Instance.new("BodyGyro")
+            bg.Name = "BoyFlyBG"
+            bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bg.P = 9000
+            bg.CFrame = workspace.CurrentCamera.CFrame
+            bg.Parent = hrp
+
+            hum.PlatformStand = true -- Penting biar gak nyangkut/jatuh pas jalan di udara
+            
             task.spawn(function()
-                while flyTog and p.Character do
+                while flyTog and p.Character and hrp.Parent do
                     local cam = workspace.CurrentCamera
-                    local ctrl = {f = 0, b = 0, l = 0, r = 0}
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then ctrl.f = 1 end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then ctrl.b = -1 end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then ctrl.l = -1 end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then ctrl.r = 1 end
-                    local dir = cam.CFrame:VectorToWorldSpace(Vector3.new(ctrl.l + ctrl.r, 0, ctrl.f + ctrl.b))
-                    if dir.Magnitude > 0 then dir = dir.Unit end
-                    if hrp:FindFirstChild("B_Fly") then hrp.B_Fly.Velocity = dir * flySpd end
-                    if hrp:FindFirstChild("B_Gyro") then hrp.B_Gyro.CFrame = cam.CFrame end
+                    local moveDir = hum.MoveDirection -- Deteksi gerak dari Joystick Mobile
+                    
+                    if moveDir.Magnitude > 0 then
+                        -- Terbang ngikutin arah joystick + arah pandangan kamera (naik/turun)
+                        bv.Velocity = Vector3.new(moveDir.X * flySpd, cam.CFrame.LookVector.Y * flySpd, moveDir.Z * flySpd)
+                    else
+                        bv.Velocity = Vector3.new(0, 0, 0)
+                    end
+                    bg.CFrame = cam.CFrame
                     task.wait()
                 end
-                if hrp:FindFirstChild("B_Fly") then hrp.B_Fly:Destroy() end
-                if hrp:FindFirstChild("B_Gyro") then hrp.B_Gyro:Destroy() end
             end)
         else
-            if hrp:FindFirstChild("B_Fly") then hrp.B_Fly:Destroy() end
-            if hrp:FindFirstChild("B_Gyro") then hrp.B_Gyro:Destroy() end
+            if hrp:FindFirstChild("BoyFlyBV") then hrp.BoyFlyBV:Destroy() end
+            if hrp:FindFirstChild("BoyFlyBG") then hrp.BoyFlyBG:Destroy() end
+            hum.PlatformStand = false
         end
     end})
-    pTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 300, Default = 50, Flag = "H_Fly_S", Callback = function(v) flySpd = v end})
 
     pTab:AddToggle({Name = "Player ESP (X-Ray)", Flag = "H_ESP", Callback = function(v)
         if v then
@@ -333,7 +361,6 @@ function AbangLibrary:CreateWindow(Settings)
         end)
     end)
 
-    -- Fungsi buat nambahin Tab Settings di akhir
     function Window:BuildSettings()
         local st = self:MakeTab({Name = "⚙️ Settings"})
         st:AddButton({Name = "Save Config Manual", Callback = function() AbangLibrary:Save() end})
