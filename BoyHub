@@ -1,12 +1,14 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V14 (SMOOTH TOGGLE)
+-- BOYHUB MEGA LIBRARY V16 (BUILT-IN HACKS)
 -- ==========================================
 
 local AbangLibrary = {}
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService") -- Wajib ditambah buat animasi geser
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 local function MakeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
@@ -49,16 +51,14 @@ function AbangLibrary:CreateWindow(Settings)
     end
     AbangLibrary:Load()
 
-    local p = game.Players.LocalPlayer
+    local p = Players.LocalPlayer
 
-    -- LOGO MINIMIZE
     local MiniLogo = Instance.new("ImageButton")
     MiniLogo.Size = UDim2.new(0, 50, 0, 50); MiniLogo.Position = UDim2.new(0, 20, 0, 20)
     MiniLogo.Image = "rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"
     MiniLogo.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MiniLogo.Visible = false; MiniLogo.Parent = ScreenGui
     Instance.new("UICorner", MiniLogo).CornerRadius = UDim.new(1, 0); MakeDraggable(MiniLogo)
 
-    -- MAIN FRAME
     local Main = Instance.new("Frame")
     Main.Size = UDim2.new(0, 420, 0, 320); Main.Position = UDim2.new(0.5, -210, 0.5, -160)
     Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.BorderSizePixel = 0; Main.Parent = ScreenGui; Main.ClipsDescendants = true
@@ -66,7 +66,6 @@ function AbangLibrary:CreateWindow(Settings)
 
     MiniLogo.MouseButton1Click:Connect(function() Main.Visible = true; MiniLogo.Visible = false end)
 
-    -- HEADER
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 65); Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Header.BorderSizePixel = 0; Header.Parent = Main
     Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
@@ -118,7 +117,7 @@ function AbangLibrary:CreateWindow(Settings)
         end)
 
         local NavBtn = Instance.new("TextButton")
-        NavBtn.Size = UDim2.new(0, 100, 0, 35); NavBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); NavBtn.Text = TabSettings.Name; NavBtn.TextColor3 = Color3.fromRGB(150, 150, 150); NavBtn.Font = Enum.Font.GothamBold; NavBtn.TextSize = 14; NavBtn.Parent = BottomBar; Instance.new("UICorner", NavBtn)
+        NavBtn.Size = UDim2.new(0, 110, 0, 35); NavBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); NavBtn.Text = TabSettings.Name; NavBtn.TextColor3 = Color3.fromRGB(150, 150, 150); NavBtn.Font = Enum.Font.GothamBold; NavBtn.TextSize = 14; NavBtn.Parent = BottomBar; Instance.new("UICorner", NavBtn)
 
         NavBtn.MouseButton1Click:Connect(function()
             for _, v in pairs(ContentArea:GetChildren()) do if v:IsA("ScrollingFrame") then v.Visible = false end end
@@ -133,46 +132,22 @@ function AbangLibrary:CreateWindow(Settings)
         local Tab = {}
 
         function Tab:AddButton(Cfg)
-            local f = Instance.new("TextButton")
-            f.Size = UDim2.new(1, 0, 0, 40); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = Cfg.Name; f.TextColor3 = Color3.fromRGB(255, 255, 255); f.Font = Enum.Font.GothamBold; f.TextSize = 14; f.Parent = Page; Instance.new("UICorner", f); f.MouseButton1Click:Connect(Cfg.Callback)
+            local f = Instance.new("TextButton"); f.Size = UDim2.new(1, 0, 0, 40); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = Cfg.Name; f.TextColor3 = Color3.fromRGB(255, 255, 255); f.Font = Enum.Font.GothamBold; f.TextSize = 14; f.Parent = Page; Instance.new("UICorner", f); f.MouseButton1Click:Connect(Cfg.Callback)
         end
 
-        -- [ PERBAIKAN ANIMASI TOGGLE ]
         function Tab:AddToggle(Cfg)
             local state = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or false
             AbangLibrary.Pengaturan[Cfg.Flag] = state
             
-            local f = Instance.new("TextButton")
-            f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = "   "..Cfg.Name; f.TextColor3 = Color3.fromRGB(240,240,240); f.Font = Enum.Font.Gotham; f.TextSize = 14; f.TextXAlignment = Enum.TextXAlignment.Left; f.Parent = Page; Instance.new("UICorner", f)
+            local f = Instance.new("TextButton"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = "   "..Cfg.Name; f.TextColor3 = Color3.fromRGB(240,240,240); f.Font = Enum.Font.Gotham; f.TextSize = 14; f.TextXAlignment = Enum.TextXAlignment.Left; f.Parent = Page; Instance.new("UICorner", f)
+            local s = Instance.new("Frame"); s.Size = UDim2.new(0, 40, 0, 20); s.Position = UDim2.new(1, -55, 0.5, -10); s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80); s.Parent = f; Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
+            local circle = Instance.new("Frame"); circle.Size = UDim2.new(0, 14, 0, 14); circle.Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7); circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255); circle.Parent = s; Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
             
-            -- Background Toggle (Merah/Hijau)
-            local s = Instance.new("Frame")
-            s.Size = UDim2.new(0, 40, 0, 20); s.Position = UDim2.new(1, -55, 0.5, -10)
-            s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
-            s.Parent = f; Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
-            
-            -- Bulatan Putih (Indikator)
-            local circle = Instance.new("Frame")
-            circle.Size = UDim2.new(0, 14, 0, 14)
-            circle.Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
-            circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            circle.Parent = s; Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
-            
-            -- Logika Klik + Animasi Smooth
             f.MouseButton1Click:Connect(function()
-                state = not state
-                AbangLibrary.Pengaturan[Cfg.Flag] = state
-                AbangLibrary:Save()
-                
-                -- Setup Animasi (Kecepatan 0.2 Detik, Tipe Quad)
+                state = not state; AbangLibrary.Pengaturan[Cfg.Flag] = state; AbangLibrary:Save()
                 local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-                local targetColor = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)
-                local targetPos = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
-                
-                -- Jalankan Animasi
-                TweenService:Create(s, tweenInfo, {BackgroundColor3 = targetColor}):Play()
-                TweenService:Create(circle, tweenInfo, {Position = targetPos}):Play()
-                
+                TweenService:Create(s, tweenInfo, {BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)}):Play()
+                TweenService:Create(circle, tweenInfo, {Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)}):Play()
                 Cfg.Callback(state)
             end)
             task.spawn(function() Cfg.Callback(state) end)
@@ -183,8 +158,11 @@ function AbangLibrary:CreateWindow(Settings)
             AbangLibrary.Pengaturan[Cfg.Flag] = val
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 50); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
             local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, -20, 0, 25); l.Position = UDim2.new(0, 10, 0, 5); l.BackgroundTransparency = 1; l.Text = Cfg.Name.." : "..val; l.TextColor3 = Color3.fromRGB(255,255,255); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
-            local bar = Instance.new("TextButton"); bar.Size = UDim2.new(0.9, 0, 0, 6); bar.Position = UDim2.new(0.05, 0, 0.7, 0); bar.BackgroundColor3 = Color3.fromRGB(20,20,20); bar.Text = ""; bar.Parent = f
-            local fill = Instance.new("Frame"); fill.Size = UDim2.new((val-Cfg.Min)/(Cfg.Max-Cfg.Min), 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(80, 160, 255); fill.Parent = bar
+            
+            local bar = Instance.new("TextButton"); bar.Size = UDim2.new(0.9, 0, 0, 6); bar.Position = UDim2.new(0.05, 0, 0.7, 0); bar.BackgroundColor3 = Color3.fromRGB(20,20,20); bar.Text = ""; bar.Parent = f; Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+            local fill = Instance.new("Frame"); fill.Size = UDim2.new((val-Cfg.Min)/(Cfg.Max-Cfg.Min), 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(80, 160, 255); fill.Parent = bar; Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+            local dot = Instance.new("Frame"); dot.Size = UDim2.new(0, 14, 0, 14); dot.AnchorPoint = Vector2.new(0.5, 0.5); dot.Position = UDim2.new(1, 0, 0.5, 0); dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255); dot.Parent = fill; Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
             local function up(i)
                 local p = math.clamp((i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
                 val = math.floor(Cfg.Min + (Cfg.Max - Cfg.Min) * p)
@@ -199,38 +177,47 @@ function AbangLibrary:CreateWindow(Settings)
         end
 
         function Tab:AddDropdown(Cfg)
+            -- (Sama seperti V15, fitur Dropdown Multi-select)
+            local isMulti = Cfg.Multi or false
             local Options = Cfg.Options or {}
-            local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Options[1]
+            local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default
+            if isMulti then if type(Default) ~= "table" then Default = Default and {Default} or {} end else if type(Default) == "table" then Default = Default[1] or Options[1] else Default = Default or Options[1] end end
             AbangLibrary.Pengaturan[Cfg.Flag] = Default
-            
+            local Selected = isMulti and Default or {Default}
+            local function GetSelectedText() return (isMulti and (#Selected == 0 and "None" or table.concat(Selected, ", "))) or (Selected[1] or "None") end
+
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
-            local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = "   " .. Cfg.Name .. " : " .. Default; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextSize = 14; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = f
-            
-            local Modal = Instance.new("TextButton")
-            Modal.Size = UDim2.new(1, 0, 1, 0); Modal.BackgroundColor3 = Color3.fromRGB(0,0,0); Modal.BackgroundTransparency = 0.5; Modal.Visible = false; Modal.Text = ""; Modal.AutoButtonColor = false; Modal.ZIndex = 50; Modal.Parent = Main
-
-            local Box = Instance.new("Frame")
-            Box.Size = UDim2.new(0, 260, 0, 250); Box.Position = UDim2.new(0.5, -130, 0.5, -125); Box.BackgroundColor3 = Color3.fromRGB(25,25,25); Box.ZIndex = 51; Box.Parent = Modal; Instance.new("UICorner", Box)
-
-            local Search = Instance.new("TextBox")
-            Search.Size = UDim2.new(1, -20, 0, 35); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Cari..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.TextSize = 14; Search.ZIndex = 52; Search.Parent = Box; Instance.new("UICorner", Search)
-            
-            local scroll = Instance.new("ScrollingFrame")
-            scroll.Size = UDim2.new(1, -20, 1, -65); scroll.Position = UDim2.new(0, 10, 0, 55); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.ZIndex = 52; scroll.Parent = Box
+            local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextSize = 14; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.TextTruncate = Enum.TextTruncate.AtEnd; btn.Parent = f; btn.Text = "   " .. Cfg.Name .. " : " .. GetSelectedText()
+            local Modal = Instance.new("TextButton"); Modal.Size = UDim2.new(1, 0, 1, 0); Modal.BackgroundColor3 = Color3.fromRGB(0,0,0); Modal.BackgroundTransparency = 0.5; Modal.Visible = false; Modal.Text = ""; Modal.AutoButtonColor = false; Modal.ZIndex = 50; Modal.Parent = Main
+            local Box = Instance.new("Frame"); Box.Size = UDim2.new(0, 260, 0, 250); Box.Position = UDim2.new(0.5, -130, 0.5, -125); Box.BackgroundColor3 = Color3.fromRGB(25,25,25); Box.ZIndex = 51; Box.Parent = Modal; Instance.new("UICorner", Box)
+            local Search = Instance.new("TextBox"); Search.Size = UDim2.new(1, -20, 0, 35); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Cari..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.TextSize = 14; Search.ZIndex = 52; Search.Parent = Box; Instance.new("UICorner", Search)
+            local scroll = Instance.new("ScrollingFrame"); scroll.Size = UDim2.new(1, -20, 1, -65); scroll.Position = UDim2.new(0, 10, 0, 55); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.ZIndex = 52; scroll.Parent = Box
             local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0, 5); layout.Parent = scroll
             
             local function Refresh(filter)
                 for _, v in pairs(scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-                for _, opt in pairs(Options) do if filter == "" or string.find(string.lower(opt), string.lower(filter)) then
-                    local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 35); o.BackgroundColor3 = Color3.fromRGB(40, 40, 40); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.TextSize = 14; o.ZIndex = 53; o.Parent = scroll; Instance.new("UICorner", o)
-                    o.MouseButton1Click:Connect(function() btn.Text = "   " .. Cfg.Name .. " : " .. opt; AbangLibrary.Pengaturan[Cfg.Flag] = opt; AbangLibrary:Save(); Cfg.Callback(opt); Modal.Visible = false end)
-                end end
+                for _, opt in pairs(Options) do 
+                    if filter == "" or string.find(string.lower(opt), string.lower(filter)) then
+                        local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 35); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.TextSize = 14; o.ZIndex = 53; o.Parent = scroll; Instance.new("UICorner", o)
+                        local isSel = false; if isMulti then for _, v in pairs(Selected) do if v == opt then isSel = true break end end else isSel = (Selected[1] == opt) end
+                        o.BackgroundColor3 = isSel and Color3.fromRGB(80, 160, 255) or Color3.fromRGB(40, 40, 40)
+                        o.MouseButton1Click:Connect(function()
+                            if isMulti then
+                                local found = false; for i, v in ipairs(Selected) do if v == opt then table.remove(Selected, i); found = true break end end
+                                if not found then table.insert(Selected, opt) end
+                                o.BackgroundColor3 = (not found) and Color3.fromRGB(80, 160, 255) or Color3.fromRGB(40, 40, 40)
+                                AbangLibrary.Pengaturan[Cfg.Flag] = Selected
+                            else Selected = {opt}; Modal.Visible = false; AbangLibrary.Pengaturan[Cfg.Flag] = opt end
+                            btn.Text = "   " .. Cfg.Name .. " : " .. GetSelectedText(); AbangLibrary:Save()
+                            if isMulti then Cfg.Callback(Selected) else Cfg.Callback(opt); Refresh("") end
+                        end)
+                    end 
+                end
             end
-            
             btn.MouseButton1Click:Connect(function() Refresh(""); Modal.Visible = true end)
             Modal.MouseButton1Click:Connect(function() Modal.Visible = false end)
             Search:GetPropertyChangedSignal("Text"):Connect(function() Refresh(Search.Text) end)
-            task.spawn(function() Cfg.Callback(Default) end)
+            task.spawn(function() if isMulti then Cfg.Callback(Selected) else Cfg.Callback(Selected[1]) end end)
         end
 
         function Tab:AddTextbox(Cfg)
@@ -242,11 +229,6 @@ function AbangLibrary:CreateWindow(Settings)
             task.spawn(function() Cfg.Callback(Default) end)
         end
 
-        function Tab:AddLabel(Text)
-            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = "  " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = Page
-            return {Set = function(_, t) l.Text = "  " .. t end}
-        end
-
         function Tab:AddParagraph(Cfg)
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 65); f.BackgroundColor3 = Color3.fromRGB(30, 30, 30); f.Parent = Page; Instance.new("UICorner", f)
             local t = Instance.new("TextLabel"); t.Size = UDim2.new(1, -20, 0, 20); t.Position = UDim2.new(0, 10, 0, 5); t.Text = Cfg.Title or "Info"; t.TextColor3 = Color3.fromRGB(80, 160, 255); t.Font = Enum.Font.GothamBold; t.TextSize = 15; t.BackgroundTransparency = 1; t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = f
@@ -255,6 +237,107 @@ function AbangLibrary:CreateWindow(Settings)
         end
 
         return Tab
+    end
+
+    -- ===============================================
+    -- [ INJECT BUILT-IN PLAYER HACKS (TAB 1) ]
+    -- ===============================================
+    local pTab = Window:MakeTab({Name = "👤 Player"})
+    
+    local wsTog, wsVal = false, 16
+    pTab:AddToggle({Name = "Auto WalkSpeed", Flag = "H_WS_T", Callback = function(v) wsTog = v end})
+    pTab:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Default = 16, Flag = "H_WS_S", Callback = function(v) wsVal = v end})
+
+    local jpTog, jpVal = false, 50
+    pTab:AddToggle({Name = "Auto JumpPower", Flag = "H_JP_T", Callback = function(v) jpTog = v end})
+    pTab:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Default = 50, Flag = "H_JP_S", Callback = function(v) jpVal = v end})
+
+    local ncTog = false
+    pTab:AddToggle({Name = "Noclip (Tembus Tembok)", Flag = "H_NC", Callback = function(v) ncTog = v end})
+
+    local ijTog = false
+    pTab:AddToggle({Name = "Infinite Jump", Flag = "H_IJ", Callback = function(v) ijTog = v end})
+
+    local flyTog, flySpd = false, 50
+    pTab:AddToggle({Name = "Fly (Terbang)", Flag = "H_Fly_T", Callback = function(v)
+        flyTog = v
+        local char = p.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local hrp = char.HumanoidRootPart
+        if flyTog then
+            local bv = Instance.new("BodyVelocity", hrp); bv.Name = "B_Fly"; bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            local bg = Instance.new("BodyGyro", hrp); bg.Name = "B_Gyro"; bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge); bg.CFrame = hrp.CFrame
+            task.spawn(function()
+                while flyTog and p.Character do
+                    local cam = workspace.CurrentCamera
+                    local ctrl = {f = 0, b = 0, l = 0, r = 0}
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then ctrl.f = 1 end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then ctrl.b = -1 end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then ctrl.l = -1 end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then ctrl.r = 1 end
+                    local dir = cam.CFrame:VectorToWorldSpace(Vector3.new(ctrl.l + ctrl.r, 0, ctrl.f + ctrl.b))
+                    if dir.Magnitude > 0 then dir = dir.Unit end
+                    if hrp:FindFirstChild("B_Fly") then hrp.B_Fly.Velocity = dir * flySpd end
+                    if hrp:FindFirstChild("B_Gyro") then hrp.B_Gyro.CFrame = cam.CFrame end
+                    task.wait()
+                end
+                if hrp:FindFirstChild("B_Fly") then hrp.B_Fly:Destroy() end
+                if hrp:FindFirstChild("B_Gyro") then hrp.B_Gyro:Destroy() end
+            end)
+        else
+            if hrp:FindFirstChild("B_Fly") then hrp.B_Fly:Destroy() end
+            if hrp:FindFirstChild("B_Gyro") then hrp.B_Gyro:Destroy() end
+        end
+    end})
+    pTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 300, Default = 50, Flag = "H_Fly_S", Callback = function(v) flySpd = v end})
+
+    pTab:AddToggle({Name = "Player ESP (X-Ray)", Flag = "H_ESP", Callback = function(v)
+        if v then
+            for _, pl in pairs(Players:GetPlayers()) do
+                if pl ~= p and pl.Character and not pl.Character:FindFirstChild("BoyESP") then
+                    local hl = Instance.new("Highlight"); hl.Name = "BoyESP"; hl.FillColor = Color3.fromRGB(255, 0, 0); hl.OutlineColor = Color3.fromRGB(255, 255, 255); hl.Parent = pl.Character
+                end
+            end
+        else
+            for _, pl in pairs(Players:GetPlayers()) do
+                if pl.Character and pl.Character:FindFirstChild("BoyESP") then pl.Character.BoyESP:Destroy() end
+            end
+        end
+    end})
+
+    -- Background Loops for Hacks
+    RunService.RenderStepped:Connect(function()
+        if p.Character and p.Character:FindFirstChild("Humanoid") then
+            if wsTog then p.Character.Humanoid.WalkSpeed = wsVal end
+            if jpTog then p.Character.Humanoid.UseJumpPower = true; p.Character.Humanoid.JumpPower = jpVal end
+        end
+    end)
+    RunService.Stepped:Connect(function()
+        if ncTog and p.Character then
+            for _, part in pairs(p.Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end
+    end)
+    UserInputService.JumpRequest:Connect(function()
+        if ijTog and p.Character and p.Character:FindFirstChild("Humanoid") then
+            p.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end)
+    Players.PlayerAdded:Connect(function(pl)
+        pl.CharacterAdded:Connect(function(char)
+            if AbangLibrary.Pengaturan["H_ESP"] then
+                task.wait(1)
+                local hl = Instance.new("Highlight"); hl.Name = "BoyESP"; hl.FillColor = Color3.fromRGB(255, 0, 0); hl.OutlineColor = Color3.fromRGB(255, 255, 255); hl.Parent = char
+            end
+        end)
+    end)
+
+    -- Fungsi buat nambahin Tab Settings di akhir
+    function Window:BuildSettings()
+        local st = self:MakeTab({Name = "⚙️ Settings"})
+        st:AddButton({Name = "Save Config Manual", Callback = function() AbangLibrary:Save() end})
+        st:AddButton({Name = "Hapus Hub", Callback = function() ScreenGui:Destroy() end})
     end
 
     return Window
