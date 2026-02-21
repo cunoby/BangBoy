@@ -1,5 +1,5 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V18 (LAYOUT & FLY FIXED)
+-- BOYHUB MEGA LIBRARY V19 (REORDERED LAYOUT)
 -- ==========================================
 
 local AbangLibrary = {}
@@ -111,9 +111,8 @@ function AbangLibrary:CreateWindow(Settings)
         local Page = Instance.new("ScrollingFrame")
         Page.Size = UDim2.new(1, -20, 1, -20); Page.Position = UDim2.new(0, 10, 0, 10); Page.BackgroundTransparency = 1; Page.Visible = false; Page.ScrollBarThickness = 2; Page.Parent = ContentArea
         
-        -- [ FIX PENGURUTAN MENU DI SINI ]
         local PageLayout = Instance.new("UIListLayout")
-        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder -- Pastikan diurutkan pakai LayoutOrder
+        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
         PageLayout.Padding = UDim.new(0, 8)
         PageLayout.Parent = Page
         
@@ -134,7 +133,7 @@ function AbangLibrary:CreateWindow(Settings)
             Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255); NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
         end
 
-        local Tab = {ItemCount = 0} -- Counter buat urutan
+        local Tab = {ItemCount = 0}
 
         function Tab:AddButton(Cfg)
             Tab.ItemCount = Tab.ItemCount + 1
@@ -260,23 +259,17 @@ function AbangLibrary:CreateWindow(Settings)
     -- ===============================================
     local pTab = Window:MakeTab({Name = "👤 Player"})
     
-    -- WalkSpeed (Slider dulu, lalu Toggle) - PASTI URUT SEKARANG
+    -- 1. WalkSpeed (Slider -> Toggle)
     local wsTog, wsVal = false, 16
     pTab:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Default = 16, Flag = "H_WS_S", Callback = function(v) wsVal = v end})
     pTab:AddToggle({Name = "Auto WalkSpeed", Flag = "H_WS_T", Callback = function(v) wsTog = v end})
 
-    -- JumpPower (Slider dulu, lalu Toggle)
+    -- 2. JumpPower (Slider -> Toggle)
     local jpTog, jpVal = false, 50
     pTab:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Default = 50, Flag = "H_JP_S", Callback = function(v) jpVal = v end})
     pTab:AddToggle({Name = "Auto JumpPower", Flag = "H_JP_T", Callback = function(v) jpTog = v end})
 
-    local ncTog = false
-    pTab:AddToggle({Name = "Noclip (Tembus Tembok)", Flag = "H_NC", Callback = function(v) ncTog = v end})
-
-    local ijTog = false
-    pTab:AddToggle({Name = "Infinite Jump", Flag = "H_IJ", Callback = function(v) ijTog = v end})
-
-    -- MOBILE FLY HACK
+    -- 3. Fly / Terbang (Slider -> Toggle) - PINDAH KESINI
     local flyTog, flySpd = false, 50
     pTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 300, Default = 50, Flag = "H_Fly_S", Callback = function(v) flySpd = v end})
     pTab:AddToggle({Name = "Fly (Terbang)", Flag = "H_Fly_T", Callback = function(v)
@@ -322,6 +315,13 @@ function AbangLibrary:CreateWindow(Settings)
             hum.PlatformStand = false
         end
     end})
+
+    -- 4. Lain-lainnya
+    local ncTog = false
+    pTab:AddToggle({Name = "Noclip (Tembus Tembok)", Flag = "H_NC", Callback = function(v) ncTog = v end})
+
+    local ijTog = false
+    pTab:AddToggle({Name = "Infinite Jump", Flag = "H_IJ", Callback = function(v) ijTog = v end})
 
     pTab:AddToggle({Name = "Player ESP (X-Ray)", Flag = "H_ESP", Callback = function(v)
         if v then
