@@ -1,0 +1,213 @@
+-- ==========================================
+-- ABANG HUB MEGA LIBRARY V9 (TEST VERSION)
+-- ==========================================
+
+local AbangLibrary = {}
+local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+AbangLibrary.Pengaturan = {}
+
+-- Fungsi Drag (Agar UI bisa digeser)
+local function MakeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = frame.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+function AbangLibrary:CreateWindow(Settings)
+    local HubName = Settings.Name or "AbangHub"
+    local SaveConfig = Settings.SaveConfig or false
+    local ConfigFolder = Settings.ConfigFolder or "AbangConfig"
+    AbangLibrary.NamaFile = ConfigFolder .. ".json"
+    
+    if CoreGui:FindFirstChild(HubName) then CoreGui[HubName]:Destroy() end
+    local ScreenGui = Instance.new("ScreenGui"); ScreenGui.Name = HubName; ScreenGui.Parent = CoreGui
+
+    -- Save/Load System
+    function AbangLibrary:Save() 
+        if SaveConfig and writefile then writefile(AbangLibrary.NamaFile, HttpService:JSONEncode(AbangLibrary.Pengaturan)) end 
+    end
+    function AbangLibrary:Load()
+        if SaveConfig and readfile and isfile and isfile(AbangLibrary.NamaFile) then
+            local s, res = pcall(function() return HttpService:JSONDecode(readfile(AbangLibrary.NamaFile)) end)
+            if s then AbangLibrary.Pengaturan = res end
+        end
+    end
+    AbangLibrary:Load()
+
+    -- Main Frame
+    local Main = Instance.new("Frame")
+    Main.Size = UDim2.new(0, 420, 0, 350); Main.Position = UDim2.new(0.5, -210, 0.5, -175)
+    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.BorderSizePixel = 0; Main.Parent = ScreenGui; Main.ClipsDescendants = true
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12); MakeDraggable(Main)
+
+    -- [ HEADER PROFILE AREA ]
+    local p = game.Players.LocalPlayer
+    local Header = Instance.new("Frame")
+    Header.Size = UDim2.new(1, 0, 0, 65); Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Header.BorderSizePixel = 0; Header.Parent = Main
+    Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+
+    local pImg = Instance.new("ImageLabel")
+    pImg.Size = UDim2.new(0, 45, 0, 45); pImg.Position = UDim2.new(0, 10, 0.5, -22)
+    pImg.Image = "rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"
+    pImg.BackgroundTransparency = 1; pImg.Parent = Header
+    Instance.new("UICorner", pImg).CornerRadius = UDim.new(1, 0)
+
+    local pName = Instance.new("TextLabel")
+    pName.Size = UDim2.new(1, -70, 0, 20); pName.Position = UDim2.new(0, 65, 0, 12); pName.Text = p.DisplayName
+    pName.TextColor3 = Color3.fromRGB(255, 255, 255); pName.Font = Enum.Font.GothamBold; pName.TextSize = 14; pName.TextXAlignment = Enum.TextXAlignment.Left; pName.BackgroundTransparency = 1; pName.Parent = Header
+
+    local pStatus = Instance.new("TextLabel")
+    pStatus.Size = UDim2.new(1, -70, 0, 20); pStatus.Position = UDim2.new(0, 65, 0, 28)
+    pStatus.Text = "Status: " .. (Settings.UserStatus or "Free User")
+    pStatus.TextColor3 = Settings.StatusColor or Color3.fromRGB(80, 255, 80); pStatus.Font = Enum.Font.GothamMedium; pStatus.TextSize = 11; pStatus.TextXAlignment = Enum.TextXAlignment.Left; pStatus.BackgroundTransparency = 1; pStatus.Parent = Header
+
+    -- Body Content Area
+    local ContentArea = Instance.new("Frame")
+    ContentArea.Size = UDim2.new(1, 0, 1, -115); ContentArea.Position = UDim2.new(0, 0, 0, 65); ContentArea.BackgroundTransparency = 1; ContentArea.Parent = Main
+
+    -- Bottom Navigation Bar
+    local BottomBar = Instance.new("ScrollingFrame")
+    BottomBar.Size = UDim2.new(1, 0, 0, 50); BottomBar.Position = UDim2.new(0, 0, 1, -50); BottomBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25); BottomBar.BorderSizePixel = 0; BottomBar.ScrollBarThickness = 0; BottomBar.Parent = Main
+    local NavLayout = Instance.new("UIListLayout")
+    NavLayout.FillDirection = Enum.FillDirection.Horizontal; NavLayout.VerticalAlignment = Enum.VerticalAlignment.Center; NavLayout.Padding = UDim.new(0, 15); NavLayout.Parent = BottomBar
+    Instance.new("UIPadding", BottomBar).PaddingLeft = UDim.new(0, 15)
+
+    -- Toggle Menu Keybind (RightControl)
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if not gpe and input.KeyCode == Enum.KeyCode.RightControl then Main.Visible = not Main.Visible end
+    end)
+
+    local Window = {}
+
+    function Window:MakeTab(TabSettings)
+        local Name = TabSettings.Name or "Tab"
+        local NavBtn = Instance.new("TextButton")
+        NavBtn.Size = UDim2.new(0, 90, 0, 35); NavBtn.BackgroundTransparency = 1; NavBtn.Text = Name
+        NavBtn.TextColor3 = Color3.fromRGB(150, 150, 150); NavBtn.Font = Enum.Font.GothamBold; NavBtn.Parent = BottomBar
+        
+        local Page = Instance.new("ScrollingFrame")
+        Page.Size = UDim2.new(1, -20, 1, -20); Page.Position = UDim2.new(0, 10, 0, 10); Page.BackgroundTransparency = 1; Page.Visible = false; Page.ScrollBarThickness = 2; Page.Parent = ContentArea
+        local PageLayout = Instance.new("UIListLayout"); PageLayout.Padding = UDim.new(0, 8); PageLayout.Parent = Page
+        PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10) end)
+
+        NavBtn.MouseButton1Click:Connect(function()
+            for _, v in pairs(ContentArea:GetChildren()) do v.Visible = false end
+            for _, v in pairs(BottomBar:GetChildren()) do if v:IsA("TextButton") then v.TextColor3 = Color3.fromRGB(150, 150, 150) end end
+            Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(80, 160, 255)
+        end)
+
+        local Tab = {}
+
+        function Tab:AddButton(Cfg)
+            local f = Instance.new("TextButton")
+            f.Size = UDim2.new(1, 0, 0, 35); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = Cfg.Name; f.TextColor3 = Color3.fromRGB(255, 255, 255); f.Font = Enum.Font.GothamBold; f.Parent = Page; Instance.new("UICorner", f); f.MouseButton1Click:Connect(Cfg.Callback)
+        end
+
+        function Tab:AddToggle(Cfg)
+            local state = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or false
+            AbangLibrary.Pengaturan[Cfg.Flag] = state
+            local f = Instance.new("TextButton")
+            f.Size = UDim2.new(1, 0, 0, 40); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = "   "..Cfg.Name; f.TextColor3 = Color3.fromRGB(240,240,240); f.Font = Enum.Font.Gotham; f.TextXAlignment = Enum.TextXAlignment.Left; f.Parent = Page; Instance.new("UICorner", f)
+            local s = Instance.new("Frame"); s.Size = UDim2.new(0, 30, 0, 16); s.Position = UDim2.new(1, -45, 0.5, -8); s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80); s.Parent = f; Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
+            f.MouseButton1Click:Connect(function()
+                state = not state; AbangLibrary.Pengaturan[Cfg.Flag] = state; AbangLibrary:Save()
+                s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80); Cfg.Callback(state)
+            end)
+            task.spawn(function() Cfg.Callback(state) end)
+        end
+
+        function Tab:AddSlider(Cfg)
+            local val = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Cfg.Min
+            AbangLibrary.Pengaturan[Cfg.Flag] = val
+            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, -20, 0, 20); l.Position = UDim2.new(0, 10, 0, 5); l.BackgroundTransparency = 1; l.Text = Cfg.Name.." : "..val; l.TextColor3 = Color3.fromRGB(255,255,255); l.Font = Enum.Font.Gotham; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+            local bar = Instance.new("TextButton"); bar.Size = UDim2.new(0.9, 0, 0, 5); bar.Position = UDim2.new(0.05, 0, 0.7, 0); bar.BackgroundColor3 = Color3.fromRGB(20,20,20); bar.Text = ""; bar.Parent = f
+            local fill = Instance.new("Frame"); fill.Size = UDim2.new((val-Cfg.Min)/(Cfg.Max-Cfg.Min), 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(80, 160, 255); fill.Parent = bar
+            local function up(i)
+                local p = math.clamp((i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+                val = math.floor(Cfg.Min + (Cfg.Max - Cfg.Min) * p)
+                l.Text = Cfg.Name.." : "..val; fill.Size = UDim2.new(p, 0, 1, 0)
+                AbangLibrary.Pengaturan[Cfg.Flag] = val; AbangLibrary:Save(); Cfg.Callback(val)
+            end
+            local drag = false
+            bar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true; up(i) end end)
+            UserInputService.InputChanged:Connect(function(i) if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then up(i) end end)
+            UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end end)
+            task.spawn(function() Cfg.Callback(val) end)
+        end
+
+        function Tab:AddDropdown(Cfg)
+            local Options = Cfg.Options or {}
+            local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Options[1]
+            AbangLibrary.Pengaturan[Cfg.Flag] = Default
+            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
+            local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = "   " .. Cfg.Name .. " : " .. Default; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = f
+            local Modal = Instance.new("TextButton"); Modal.Size = UDim2.new(1, 0, 1, 0); Modal.BackgroundColor3 = Color3.fromRGB(0,0,0); Modal.BackgroundTransparency = 0.6; Modal.Visible = false; Modal.Parent = ScreenGui
+            local Box = Instance.new("Frame"); Box.Size = UDim2.new(0, 220, 0, 250); Box.Position = UDim2.new(0.5, -110, 0.5, -125); Box.BackgroundColor3 = Color3.fromRGB(25,25,25); Box.Parent = Modal; Instance.new("UICorner", Box)
+            local Search = Instance.new("TextBox"); Search.Size = UDim2.new(1, -20, 0, 30); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Search..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.Parent = Box; Instance.new("UICorner", Search)
+            local scroll = Instance.new("ScrollingFrame"); scroll.Size = UDim2.new(1, -20, 1, -60); scroll.Position = UDim2.new(0, 10, 0, 50); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.Parent = Box
+            local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0, 5); layout.Parent = scroll
+            local function Refresh(filter)
+                for _, v in pairs(scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+                for _, opt in pairs(Options) do if filter == "" or string.find(string.lower(opt), string.lower(filter)) then
+                    local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 30); o.BackgroundColor3 = Color3.fromRGB(40, 40, 40); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.Parent = scroll; Instance.new("UICorner", o)
+                    o.MouseButton1Click:Connect(function() btn.Text = "   " .. Cfg.Name .. " : " .. opt; AbangLibrary.Pengaturan[Cfg.Flag] = opt; AbangLibrary:Save(); Cfg.Callback(opt); Modal.Visible = false end)
+                end end
+            end
+            btn.MouseButton1Click:Connect(function() Refresh(""); Modal.Visible = true end)
+            Modal.MouseButton1Click:Connect(function() Modal.Visible = false end)
+            Search:GetPropertyChangedSignal("Text"):Connect(function() Refresh(Search.Text) end)
+            task.spawn(function() Cfg.Callback(Default) end)
+        end
+
+        function Tab:AddTextbox(Cfg)
+            local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or ""
+            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(0.4, 0, 1, 0); l.Position = UDim2.new(0, 10, 0, 0); l.Text = Cfg.Name; l.TextColor3 = Color3.fromRGB(255, 255, 255); l.BackgroundTransparency = 1; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+            local tb = Instance.new("TextBox"); tb.Size = UDim2.new(0.5, 0, 0, 25); tb.Position = UDim2.new(0.45, 0, 0.5, -12); tb.BackgroundColor3 = Color3.fromRGB(25, 25, 25); tb.Text = Default; tb.TextColor3 = Color3.fromRGB(80, 160, 255); tb.Parent = f; Instance.new("UICorner", tb)
+            tb.FocusLost:Connect(function() AbangLibrary.Pengaturan[Cfg.Flag] = tb.Text; AbangLibrary:Save(); Cfg.Callback(tb.Text) end)
+            task.spawn(function() Cfg.Callback(Default) end)
+        end
+
+        function Tab:AddLabel(Text)
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = "  " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = Page
+            return {Set = function(_, t) l.Text = "  " .. t end}
+        end
+
+        function Tab:AddParagraph(Cfg)
+            local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 60); f.BackgroundColor3 = Color3.fromRGB(30, 30, 30); f.Parent = Page; Instance.new("UICorner", f)
+            local t = Instance.new("TextLabel"); t.Size = UDim2.new(1, -20, 0, 20); t.Position = UDim2.new(0, 10, 0, 5); t.Text = Cfg.Title or "Info"; t.TextColor3 = Color3.fromRGB(80, 160, 255); t.Font = Enum.Font.GothamBold; t.BackgroundTransparency = 1; t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = f
+            local c = Instance.new("TextLabel"); c.Size = UDim2.new(1, -20, 1, -25); c.Position = UDim2.new(0, 10, 0, 25); c.Text = Cfg.Content or ""; c.TextColor3 = Color3.fromRGB(255, 255, 255); c.Font = Enum.Font.Gotham; c.TextSize = 12; c.TextWrapped = true; c.BackgroundTransparency = 1; c.TextXAlignment = Enum.TextXAlignment.Left; c.TextYAlignment = Enum.TextYAlignment.Top; c.Parent = f
+            c:GetPropertyChangedSignal("TextBounds"):Connect(function() f.Size = UDim2.new(1, 0, 0, c.TextBounds.Y + 35) end)
+        end
+
+        return Tab
+    end
+
+    -- Tab Settings Otomatis
+    local st = Window:MakeTab({Name = "⚙️ Settings"})
+    st:AddButton({Name = "Save Config", Callback = function() AbangLibrary:Save() end})
+    st:AddButton({Name = "Reload Config", Callback = function() AbangLibrary:Load() end})
+    st:AddButton({Name = "Close UI", Callback = function() ScreenGui:Destroy() end})
+
+    return Window
+end
+
+return AbangLibrary
