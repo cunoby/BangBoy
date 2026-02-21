@@ -1,5 +1,5 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V11 (100% FIXED)
+-- BOYHUB MEGA LIBRARY V12 (DROPDOWN FIXED)
 -- ==========================================
 
 local AbangLibrary = {}
@@ -53,7 +53,6 @@ function AbangLibrary:CreateWindow(Settings)
     Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.BorderSizePixel = 0; Main.Parent = ScreenGui; Main.ClipsDescendants = true
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12); MakeDraggable(Main)
 
-    -- HEADER PROFILE
     local p = game.Players.LocalPlayer
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 65); Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Header.BorderSizePixel = 0; Header.Parent = Main
@@ -71,23 +70,21 @@ function AbangLibrary:CreateWindow(Settings)
     pStatus.Size = UDim2.new(1, -70, 0, 20); pStatus.Position = UDim2.new(0, 65, 0, 28); pStatus.Text = "Status: " .. (Settings.UserStatus or "User")
     pStatus.TextColor3 = Settings.StatusColor or Color3.fromRGB(80, 255, 80); pStatus.Font = Enum.Font.GothamMedium; pStatus.TextSize = 11; pStatus.TextXAlignment = Enum.TextXAlignment.Left; pStatus.BackgroundTransparency = 1; pStatus.Parent = Header
 
-    -- CONTENT AREA
     local ContentArea = Instance.new("Frame")
     ContentArea.Size = UDim2.new(1, 0, 1, -115); ContentArea.Position = UDim2.new(0, 0, 0, 65); ContentArea.BackgroundTransparency = 1; ContentArea.Parent = Main
 
-    -- BOTTOM BAR
     local BottomBar = Instance.new("ScrollingFrame")
     BottomBar.Size = UDim2.new(1, 0, 0, 50); BottomBar.Position = UDim2.new(0, 0, 1, -50); BottomBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20); BottomBar.BorderSizePixel = 0; BottomBar.ScrollBarThickness = 0; BottomBar.Parent = Main
     local NavLayout = Instance.new("UIListLayout"); NavLayout.FillDirection = Enum.FillDirection.Horizontal; NavLayout.VerticalAlignment = Enum.VerticalAlignment.Center; NavLayout.Padding = UDim.new(0, 10); NavLayout.Parent = BottomBar
     Instance.new("UIPadding", BottomBar).PaddingLeft = UDim.new(0, 10)
 
-    -- FIX BOTTOM BAR CANVAS SIZE
     NavLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         BottomBar.CanvasSize = UDim2.new(0, NavLayout.AbsoluteContentSize.X + 20, 0, 0)
     end)
 
     local Window = {}
     Window.TabsCount = 0
+    local FirstTab = nil
 
     function Window:MakeTab(TabSettings)
         Window.TabsCount = Window.TabsCount + 1
@@ -96,7 +93,6 @@ function AbangLibrary:CreateWindow(Settings)
         Page.Size = UDim2.new(1, -20, 1, -20); Page.Position = UDim2.new(0, 10, 0, 10); Page.BackgroundTransparency = 1; Page.Visible = false; Page.ScrollBarThickness = 2; Page.Parent = ContentArea
         local PageLayout = Instance.new("UIListLayout"); PageLayout.Padding = UDim.new(0, 8); PageLayout.Parent = Page
         
-        -- FIX PAGE CANVAS SIZE
         PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() 
             Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 15) 
         end)
@@ -110,7 +106,6 @@ function AbangLibrary:CreateWindow(Settings)
             Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255); NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
         end)
 
-        -- LOGIKA TAB PERTAMA OTOMATIS TERBUKA (FIXED)
         if Window.TabsCount == 1 then
             Page.Visible = true
             NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -161,20 +156,44 @@ function AbangLibrary:CreateWindow(Settings)
             local Options = Cfg.Options or {}
             local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Options[1]
             AbangLibrary.Pengaturan[Cfg.Flag] = Default
+            
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Parent = Page; Instance.new("UICorner", f)
             local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = "   " .. Cfg.Name .. " : " .. Default; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = f
-            local Modal = Instance.new("TextButton"); Modal.Size = UDim2.new(1, 0, 1, 0); Modal.BackgroundColor3 = Color3.fromRGB(0,0,0); Modal.BackgroundTransparency = 0.6; Modal.Visible = false; Modal.Parent = ScreenGui
-            local Box = Instance.new("Frame"); Box.Size = UDim2.new(0, 220, 0, 250); Box.Position = UDim2.new(0.5, -110, 0.5, -125); Box.BackgroundColor3 = Color3.fromRGB(25,25,25); Box.Parent = Modal; Instance.new("UICorner", Box)
-            local Search = Instance.new("TextBox"); Search.Size = UDim2.new(1, -20, 0, 30); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Search..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.Parent = Box; Instance.new("UICorner", Search)
-            local scroll = Instance.new("ScrollingFrame"); scroll.Size = UDim2.new(1, -20, 1, -60); scroll.Position = UDim2.new(0, 10, 0, 50); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.Parent = Box
+            
+            -- [PERBAIKAN DI SINI] Parent diarahkan ke Main GUI, ZIndex dinaikkan
+            local Modal = Instance.new("TextButton")
+            Modal.Size = UDim2.new(1, 0, 1, 0)
+            Modal.BackgroundColor3 = Color3.fromRGB(0,0,0)
+            Modal.BackgroundTransparency = 0.5
+            Modal.Visible = false
+            Modal.Text = ""
+            Modal.AutoButtonColor = false
+            Modal.ZIndex = 50 -- Biar nutupin semua elemen di GUI
+            Modal.Parent = Main -- Nempel ke GUI utama
+
+            local Box = Instance.new("Frame")
+            Box.Size = UDim2.new(0, 240, 0, 250)
+            Box.Position = UDim2.new(0.5, -120, 0.5, -125) -- Posisi otomatis tengah
+            Box.BackgroundColor3 = Color3.fromRGB(25,25,25)
+            Box.ZIndex = 51
+            Box.Parent = Modal
+            Instance.new("UICorner", Box)
+
+            local Search = Instance.new("TextBox")
+            Search.Size = UDim2.new(1, -20, 0, 30); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Search..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.ZIndex = 52; Search.Parent = Box; Instance.new("UICorner", Search)
+            
+            local scroll = Instance.new("ScrollingFrame")
+            scroll.Size = UDim2.new(1, -20, 1, -60); scroll.Position = UDim2.new(0, 10, 0, 50); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.ZIndex = 52; scroll.Parent = Box
             local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0, 5); layout.Parent = scroll
+            
             local function Refresh(filter)
                 for _, v in pairs(scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
                 for _, opt in pairs(Options) do if filter == "" or string.find(string.lower(opt), string.lower(filter)) then
-                    local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 30); o.BackgroundColor3 = Color3.fromRGB(40, 40, 40); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.Parent = scroll; Instance.new("UICorner", o)
+                    local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 30); o.BackgroundColor3 = Color3.fromRGB(40, 40, 40); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.ZIndex = 53; o.Parent = scroll; Instance.new("UICorner", o)
                     o.MouseButton1Click:Connect(function() btn.Text = "   " .. Cfg.Name .. " : " .. opt; AbangLibrary.Pengaturan[Cfg.Flag] = opt; AbangLibrary:Save(); Cfg.Callback(opt); Modal.Visible = false end)
                 end end
             end
+            
             btn.MouseButton1Click:Connect(function() Refresh(""); Modal.Visible = true end)
             Modal.MouseButton1Click:Connect(function() Modal.Visible = false end)
             Search:GetPropertyChangedSignal("Text"):Connect(function() Refresh(Search.Text) end)
