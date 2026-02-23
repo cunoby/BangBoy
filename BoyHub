@@ -1,5 +1,5 @@
 -- ==========================================
--- BOYHUB MEGA LIBRARY V20 (AUTO RESET FIX)
+-- BOYHUB MEGA LIBRARY V20 (FIXED REFRESH BUG)
 -- ==========================================
 
 local AbangLibrary = {}
@@ -15,11 +15,15 @@ local function MakeDraggable(frame)
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true; dragStart = input.Position; startPos = frame.Position
-            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
         end
     end)
     frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
     end)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
@@ -33,16 +37,19 @@ function AbangLibrary:CreateWindow(Settings)
     local HubName = Settings.Name or "BoyHub"
     local SaveConfig = Settings.SaveConfig or false
     local ConfigFolder = Settings.ConfigFolder or "BoyHubConfig"
-    
     AbangLibrary.Pengaturan = {}
     AbangLibrary.NamaFile = ConfigFolder .. ".json"
-    
+
     if CoreGui:FindFirstChild(HubName) then CoreGui[HubName]:Destroy() end
+
     local ScreenGui = Instance.new("ScreenGui"); ScreenGui.Name = HubName; ScreenGui.Parent = CoreGui; ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    function AbangLibrary:Save() 
-        if SaveConfig and writefile then writefile(AbangLibrary.NamaFile, HttpService:JSONEncode(AbangLibrary.Pengaturan)) end 
+    function AbangLibrary:Save()
+        if SaveConfig and writefile then
+            writefile(AbangLibrary.NamaFile, HttpService:JSONEncode(AbangLibrary.Pengaturan))
+        end
     end
+
     function AbangLibrary:Load()
         if SaveConfig and readfile and isfile and isfile(AbangLibrary.NamaFile) then
             local s, res = pcall(function() return HttpService:JSONDecode(readfile(AbangLibrary.NamaFile)) end)
@@ -52,7 +59,6 @@ function AbangLibrary:CreateWindow(Settings)
     AbangLibrary:Load()
 
     local p = Players.LocalPlayer
-
     local MiniLogo = Instance.new("ImageButton")
     MiniLogo.Size = UDim2.new(0, 50, 0, 50); MiniLogo.Position = UDim2.new(0, 20, 0, 20)
     MiniLogo.Image = "rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"
@@ -107,17 +113,12 @@ function AbangLibrary:CreateWindow(Settings)
 
     function Window:MakeTab(TabSettings)
         Window.TabsCount = Window.TabsCount + 1
-        
         local Page = Instance.new("ScrollingFrame")
         Page.Size = UDim2.new(1, -20, 1, -20); Page.Position = UDim2.new(0, 10, 0, 10); Page.BackgroundTransparency = 1; Page.Visible = false; Page.ScrollBarThickness = 2; Page.Parent = ContentArea
-        
         local PageLayout = Instance.new("UIListLayout")
-        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        PageLayout.Padding = UDim.new(0, 8)
-        PageLayout.Parent = Page
-        
-        PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() 
-            Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 15) 
+        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder; PageLayout.Padding = UDim.new(0, 8); PageLayout.Parent = Page
+        PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 15)
         end)
 
         local NavBtn = Instance.new("TextButton")
@@ -129,9 +130,7 @@ function AbangLibrary:CreateWindow(Settings)
             Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255); NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
         end)
 
-        if Window.TabsCount == 1 then
-            Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255); NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
-        end
+        if Window.TabsCount == 1 then Page.Visible = true; NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255); NavBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255) end
 
         local Tab = {ItemCount = 0}
 
@@ -143,14 +142,15 @@ function AbangLibrary:CreateWindow(Settings)
         function Tab:AddToggle(Cfg)
             Tab.ItemCount = Tab.ItemCount + 1
             local state = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or false
-            AbangLibrary.Pengaturan[Cfg.Flag] = state
+            if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = state end
             
-            local f = Instance.new("TextButton"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = "   "..Cfg.Name; f.TextColor3 = Color3.fromRGB(240,240,240); f.Font = Enum.Font.Gotham; f.TextSize = 14; f.TextXAlignment = Enum.TextXAlignment.Left; f.LayoutOrder = Tab.ItemCount; f.Parent = Page; Instance.new("UICorner", f)
+            local f = Instance.new("TextButton"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.Text = " "..Cfg.Name; f.TextColor3 = Color3.fromRGB(240,240,240); f.Font = Enum.Font.Gotham; f.TextSize = 14; f.TextXAlignment = Enum.TextXAlignment.Left; f.LayoutOrder = Tab.ItemCount; f.Parent = Page; Instance.new("UICorner", f)
             local s = Instance.new("Frame"); s.Size = UDim2.new(0, 40, 0, 20); s.Position = UDim2.new(1, -55, 0.5, -10); s.BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80); s.Parent = f; Instance.new("UICorner", s).CornerRadius = UDim.new(1,0)
             local circle = Instance.new("Frame"); circle.Size = UDim2.new(0, 14, 0, 14); circle.Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7); circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255); circle.Parent = s; Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
-            
+
             f.MouseButton1Click:Connect(function()
-                state = not state; AbangLibrary.Pengaturan[Cfg.Flag] = state; AbangLibrary:Save()
+                state = not state; 
+                if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = state; AbangLibrary:Save() end
                 local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
                 TweenService:Create(s, tweenInfo, {BackgroundColor3 = state and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(255, 80, 80)}):Play()
                 TweenService:Create(circle, tweenInfo, {Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)}):Play()
@@ -162,10 +162,10 @@ function AbangLibrary:CreateWindow(Settings)
         function Tab:AddSlider(Cfg)
             Tab.ItemCount = Tab.ItemCount + 1
             local val = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default or Cfg.Min
-            AbangLibrary.Pengaturan[Cfg.Flag] = val
+            if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = val end
+            
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 50); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.LayoutOrder = Tab.ItemCount; f.Parent = Page; Instance.new("UICorner", f)
             local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, -20, 0, 25); l.Position = UDim2.new(0, 10, 0, 5); l.BackgroundTransparency = 1; l.Text = Cfg.Name.." : "..val; l.TextColor3 = Color3.fromRGB(255,255,255); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
-            
             local bar = Instance.new("TextButton"); bar.Size = UDim2.new(0.9, 0, 0, 6); bar.Position = UDim2.new(0.05, 0, 0.7, 0); bar.BackgroundColor3 = Color3.fromRGB(20,20,20); bar.Text = ""; bar.Parent = f; Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
             local fill = Instance.new("Frame"); fill.Size = UDim2.new((val-Cfg.Min)/(Cfg.Max-Cfg.Min), 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(80, 160, 255); fill.Parent = bar; Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
             local dot = Instance.new("Frame"); dot.Size = UDim2.new(0, 14, 0, 14); dot.AnchorPoint = Vector2.new(0.5, 0.5); dot.Position = UDim2.new(1, 0, 0.5, 0); dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255); dot.Parent = fill; Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
@@ -174,12 +174,20 @@ function AbangLibrary:CreateWindow(Settings)
                 local p = math.clamp((i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
                 val = math.floor(Cfg.Min + (Cfg.Max - Cfg.Min) * p)
                 l.Text = Cfg.Name.." : "..val; fill.Size = UDim2.new(p, 0, 1, 0)
-                AbangLibrary.Pengaturan[Cfg.Flag] = val; AbangLibrary:Save(); Cfg.Callback(val)
+                if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = val; AbangLibrary:Save() end
+                Cfg.Callback(val)
             end
+
             local drag = false
-            bar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true; up(i) end end)
-            UserInputService.InputChanged:Connect(function(i) if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then up(i) end end)
-            UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end end)
+            bar.InputBegan:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true; up(i) end
+            end)
+            UserInputService.InputChanged:Connect(function(i)
+                if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then up(i) end
+            end)
+            UserInputService.InputEnded:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end
+            end)
             task.spawn(function() Cfg.Callback(val) end)
         end
 
@@ -187,44 +195,88 @@ function AbangLibrary:CreateWindow(Settings)
             Tab.ItemCount = Tab.ItemCount + 1
             local isMulti = Cfg.Multi or false
             local Options = Cfg.Options or {}
-            local Default = AbangLibrary.Pengaturan[Cfg.Flag] or Cfg.Default
-            if isMulti then if type(Default) ~= "table" then Default = Default and {Default} or {} end else if type(Default) == "table" then Default = Default[1] or Options[1] else Default = Default or Options[1] end end
-            AbangLibrary.Pengaturan[Cfg.Flag] = Default
+            local Default = (Cfg.Flag and AbangLibrary.Pengaturan[Cfg.Flag]) or Cfg.Default
+
+            if isMulti then
+                if type(Default) ~= "table" then Default = Default and {Default} or {} end
+            else
+                if type(Default) == "table" then Default = Default[1] or Options[1] else Default = Default or Options[1] end
+            end
+            
+            if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = Default end
             local Selected = isMulti and Default or {Default}
-            local function GetSelectedText() return (isMulti and (#Selected == 0 and "None" or table.concat(Selected, ", "))) or (Selected[1] or "None") end
+
+            local function GetSelectedText()
+                return (isMulti and (#Selected == 0 and "None" or table.concat(Selected, ", "))) or (Selected[1] or "None")
+            end
 
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.LayoutOrder = Tab.ItemCount; f.Parent = Page; Instance.new("UICorner", f)
-            local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextSize = 14; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.TextTruncate = Enum.TextTruncate.AtEnd; btn.Parent = f; btn.Text = "   " .. Cfg.Name .. " : " .. GetSelectedText()
+            local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.Font = Enum.Font.Gotham; btn.TextSize = 14; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.TextTruncate = Enum.TextTruncate.AtEnd; btn.Parent = f; btn.Text = " " .. Cfg.Name .. " : " .. GetSelectedText()
+
             local Modal = Instance.new("TextButton"); Modal.Size = UDim2.new(1, 0, 1, 0); Modal.BackgroundColor3 = Color3.fromRGB(0,0,0); Modal.BackgroundTransparency = 0.5; Modal.Visible = false; Modal.Text = ""; Modal.AutoButtonColor = false; Modal.ZIndex = 50; Modal.Parent = Main
             local Box = Instance.new("Frame"); Box.Size = UDim2.new(0, 260, 0, 250); Box.Position = UDim2.new(0.5, -130, 0.5, -125); Box.BackgroundColor3 = Color3.fromRGB(25,25,25); Box.ZIndex = 51; Box.Parent = Modal; Instance.new("UICorner", Box)
             local Search = Instance.new("TextBox"); Search.Size = UDim2.new(1, -20, 0, 35); Search.Position = UDim2.new(0, 10, 0, 10); Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Search.PlaceholderText = "Cari..."; Search.Text = ""; Search.TextColor3 = Color3.fromRGB(255,255,255); Search.TextSize = 14; Search.ZIndex = 52; Search.Parent = Box; Instance.new("UICorner", Search)
             local scroll = Instance.new("ScrollingFrame"); scroll.Size = UDim2.new(1, -20, 1, -65); scroll.Position = UDim2.new(0, 10, 0, 55); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 2; scroll.ZIndex = 52; scroll.Parent = Box
             local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0, 5); layout.Parent = scroll
-            
+
             local function Refresh(filter)
                 for _, v in pairs(scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-                for _, opt in pairs(Options) do 
+                for _, opt in pairs(Options) do
                     if filter == "" or string.find(string.lower(opt), string.lower(filter)) then
                         local o = Instance.new("TextButton"); o.Size = UDim2.new(1, 0, 0, 35); o.Text = opt; o.TextColor3 = Color3.fromRGB(255, 255, 255); o.TextSize = 14; o.ZIndex = 53; o.Parent = scroll; Instance.new("UICorner", o)
-                        local isSel = false; if isMulti then for _, v in pairs(Selected) do if v == opt then isSel = true break end end else isSel = (Selected[1] == opt) end
+                        local isSel = false;
+                        if isMulti then
+                            for _, v in pairs(Selected) do if v == opt then isSel = true break end end
+                        else
+                            isSel = (Selected[1] == opt)
+                        end
                         o.BackgroundColor3 = isSel and Color3.fromRGB(80, 160, 255) or Color3.fromRGB(40, 40, 40)
+                        
                         o.MouseButton1Click:Connect(function()
                             if isMulti then
-                                local found = false; for i, v in ipairs(Selected) do if v == opt then table.remove(Selected, i); found = true break end end
+                                local found = false;
+                                for i, v in ipairs(Selected) do
+                                    if v == opt then table.remove(Selected, i); found = true break end
+                                end
                                 if not found then table.insert(Selected, opt) end
                                 o.BackgroundColor3 = (not found) and Color3.fromRGB(80, 160, 255) or Color3.fromRGB(40, 40, 40)
-                                AbangLibrary.Pengaturan[Cfg.Flag] = Selected
-                            else Selected = {opt}; Modal.Visible = false; AbangLibrary.Pengaturan[Cfg.Flag] = opt end
-                            btn.Text = "   " .. Cfg.Name .. " : " .. GetSelectedText(); AbangLibrary:Save()
+                                if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = Selected end
+                            else
+                                Selected = {opt}; Modal.Visible = false; 
+                                if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = opt end
+                            end
+                            btn.Text = " " .. Cfg.Name .. " : " .. GetSelectedText(); AbangLibrary:Save()
                             if isMulti then Cfg.Callback(Selected) else Cfg.Callback(opt); Refresh("") end
                         end)
-                    end 
+                    end
                 end
             end
+
             btn.MouseButton1Click:Connect(function() Refresh(""); Modal.Visible = true end)
             Modal.MouseButton1Click:Connect(function() Modal.Visible = false end)
             Search:GetPropertyChangedSignal("Text"):Connect(function() Refresh(Search.Text) end)
-            task.spawn(function() if isMulti then Cfg.Callback(Selected) else Cfg.Callback(Selected[1]) end end)
+            task.spawn(function()
+                if isMulti then Cfg.Callback(Selected) else Cfg.Callback(Selected[1]) end
+            end)
+
+            -- ==========================================
+            -- INI DIA PENYELAMATNYA (RETURN REFRESH FUNC)
+            -- ==========================================
+            return {
+                Refresh = function(self, newOptions, keepSelected)
+                    Options = newOptions or {}
+                    if not keepSelected then
+                        if isMulti then
+                            Selected = {}
+                        else
+                            Selected = {Options[1] or "Kosong"}
+                        end
+                    end
+                    if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = isMulti and Selected or Selected[1] end
+                    btn.Text = " " .. Cfg.Name .. " : " .. GetSelectedText()
+                    Refresh("")
+                end
+            }
         end
 
         function Tab:AddTextbox(Cfg)
@@ -233,14 +285,17 @@ function AbangLibrary:CreateWindow(Settings)
             local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 45); f.BackgroundColor3 = Color3.fromRGB(35, 35, 35); f.LayoutOrder = Tab.ItemCount; f.Parent = Page; Instance.new("UICorner", f)
             local l = Instance.new("TextLabel"); l.Size = UDim2.new(0.4, 0, 1, 0); l.Position = UDim2.new(0, 10, 0, 0); l.Text = Cfg.Name; l.TextColor3 = Color3.fromRGB(255, 255, 255); l.BackgroundTransparency = 1; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
             local tb = Instance.new("TextBox"); tb.Size = UDim2.new(0.5, 0, 0, 30); tb.Position = UDim2.new(0.45, 0, 0.5, -15); tb.BackgroundColor3 = Color3.fromRGB(25, 25, 25); tb.Text = Default; tb.TextColor3 = Color3.fromRGB(80, 160, 255); tb.TextSize = 14; tb.Parent = f; Instance.new("UICorner", tb)
-            tb.FocusLost:Connect(function() AbangLibrary.Pengaturan[Cfg.Flag] = tb.Text; AbangLibrary:Save(); Cfg.Callback(tb.Text) end)
+            tb.FocusLost:Connect(function()
+                if Cfg.Flag then AbangLibrary.Pengaturan[Cfg.Flag] = tb.Text; AbangLibrary:Save() end
+                Cfg.Callback(tb.Text)
+            end)
             task.spawn(function() Cfg.Callback(Default) end)
         end
 
         function Tab:AddLabel(Text)
             Tab.ItemCount = Tab.ItemCount + 1
-            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = "  " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.LayoutOrder = Tab.ItemCount; l.Parent = Page
-            return {Set = function(_, t) l.Text = "  " .. t end}
+            local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0, 25); l.BackgroundTransparency = 1; l.Text = " " .. Text; l.TextColor3 = Color3.fromRGB(200, 200, 200); l.Font = Enum.Font.Gotham; l.TextSize = 14; l.TextXAlignment = Enum.TextXAlignment.Left; l.LayoutOrder = Tab.ItemCount; l.Parent = Page
+            return {Set = function(_, t) l.Text = " " .. t end}
         end
 
         function Tab:AddParagraph(Cfg)
@@ -249,141 +304,16 @@ function AbangLibrary:CreateWindow(Settings)
             local t = Instance.new("TextLabel"); t.Size = UDim2.new(1, -20, 0, 20); t.Position = UDim2.new(0, 10, 0, 5); t.Text = Cfg.Title or "Info"; t.TextColor3 = Color3.fromRGB(80, 160, 255); t.Font = Enum.Font.GothamBold; t.TextSize = 15; t.BackgroundTransparency = 1; t.TextXAlignment = Enum.TextXAlignment.Left; t.Parent = f
             local c = Instance.new("TextLabel"); c.Size = UDim2.new(1, -20, 1, -30); c.Position = UDim2.new(0, 10, 0, 25); c.Text = Cfg.Content or ""; c.TextColor3 = Color3.fromRGB(255, 255, 255); c.Font = Enum.Font.Gotham; c.TextSize = 13; c.TextWrapped = true; c.BackgroundTransparency = 1; c.TextXAlignment = Enum.TextXAlignment.Left; c.TextYAlignment = Enum.TextYAlignment.Top; c.Parent = f
             c:GetPropertyChangedSignal("TextBounds"):Connect(function() f.Size = UDim2.new(1, 0, 0, c.TextBounds.Y + 35) end)
+            return {Set = function(_, baru) t.Text = baru.Title or t.Text; c.Text = baru.Content or c.Text end}
         end
-
         return Tab
     end
-
-    -- ===============================================
-    -- [ INJECT BUILT-IN PLAYER HACKS (TAB 1) ]
-    -- ===============================================
-    local pTab = Window:MakeTab({Name = "👤 Player"})
-    
-    -- 1. WalkSpeed (Slider -> Toggle -> Auto Reset saat OFF)
-    local wsTog, wsVal = false, 16
-    pTab:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Default = 16, Flag = "H_WS_S", Callback = function(v) wsVal = v end})
-    pTab:AddToggle({Name = "Auto WalkSpeed", Flag = "H_WS_T", Callback = function(v) 
-        wsTog = v 
-        if not v and p.Character and p.Character:FindFirstChild("Humanoid") then
-            p.Character.Humanoid.WalkSpeed = 16 -- RESET KE NORMAL
-        end
-    end})
-
-    -- 2. JumpPower (Slider -> Toggle -> Auto Reset saat OFF)
-    local jpTog, jpVal = false, 50
-    pTab:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Default = 50, Flag = "H_JP_S", Callback = function(v) jpVal = v end})
-    pTab:AddToggle({Name = "Auto JumpPower", Flag = "H_JP_T", Callback = function(v) 
-        jpTog = v 
-        if not v and p.Character and p.Character:FindFirstChild("Humanoid") then
-            p.Character.Humanoid.JumpPower = 50 -- RESET KE NORMAL
-        end
-    end})
-
-    -- 3. Fly / Terbang (Slider -> Toggle -> Auto Rem & Jatuh Normal saat OFF)
-    local flyTog, flySpd = false, 50
-    pTab:AddSlider({Name = "Fly Speed", Min = 10, Max = 300, Default = 50, Flag = "H_Fly_S", Callback = function(v) flySpd = v end})
-    pTab:AddToggle({Name = "Fly (Terbang)", Flag = "H_Fly_T", Callback = function(v)
-        flyTog = v
-        local char = p.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
-        local hrp = char.HumanoidRootPart
-        local hum = char.Humanoid
-        
-        if flyTog then
-            local bv = Instance.new("BodyVelocity")
-            bv.Name = "BoyFlyBV"
-            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bv.Velocity = Vector3.new(0, 0, 0)
-            bv.Parent = hrp
-            
-            local bg = Instance.new("BodyGyro")
-            bg.Name = "BoyFlyBG"
-            bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bg.P = 9000
-            bg.CFrame = workspace.CurrentCamera.CFrame
-            bg.Parent = hrp
-
-            hum.PlatformStand = true 
-            
-            task.spawn(function()
-                while flyTog and p.Character and hrp.Parent do
-                    local cam = workspace.CurrentCamera
-                    local moveDir = hum.MoveDirection 
-                    
-                    if moveDir.Magnitude > 0 then
-                        bv.Velocity = Vector3.new(moveDir.X * flySpd, cam.CFrame.LookVector.Y * flySpd, moveDir.Z * flySpd)
-                    else
-                        bv.Velocity = Vector3.new(0, 0, 0)
-                    end
-                    bg.CFrame = cam.CFrame
-                    task.wait()
-                end
-            end)
-        else
-            if hrp:FindFirstChild("BoyFlyBV") then hrp.BoyFlyBV:Destroy() end
-            if hrp:FindFirstChild("BoyFlyBG") then hrp.BoyFlyBG:Destroy() end
-            hum.PlatformStand = false
-            -- RESET: Buang momentum (biar langsung ngerem dan jatuh pas di-off)
-            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0) 
-        end
-    end})
-
-    -- 4. Lain-lainnya
-    local ncTog = false
-    pTab:AddToggle({Name = "Noclip (Tembus Tembok)", Flag = "H_NC", Callback = function(v) ncTog = v end})
-
-    local ijTog = false
-    pTab:AddToggle({Name = "Infinite Jump", Flag = "H_IJ", Callback = function(v) ijTog = v end})
-
-    pTab:AddToggle({Name = "Player ESP (X-Ray)", Flag = "H_ESP", Callback = function(v)
-        if v then
-            for _, pl in pairs(Players:GetPlayers()) do
-                if pl ~= p and pl.Character and not pl.Character:FindFirstChild("BoyESP") then
-                    local hl = Instance.new("Highlight"); hl.Name = "BoyESP"; hl.FillColor = Color3.fromRGB(255, 0, 0); hl.OutlineColor = Color3.fromRGB(255, 255, 255); hl.Parent = pl.Character
-                end
-            end
-        else
-            for _, pl in pairs(Players:GetPlayers()) do
-                if pl.Character and pl.Character:FindFirstChild("BoyESP") then pl.Character.BoyESP:Destroy() end
-            end
-        end
-    end})
-
-    -- Background Loops
-    RunService.RenderStepped:Connect(function()
-        if p.Character and p.Character:FindFirstChild("Humanoid") then
-            if wsTog then p.Character.Humanoid.WalkSpeed = wsVal end
-            if jpTog then p.Character.Humanoid.UseJumpPower = true; p.Character.Humanoid.JumpPower = jpVal end
-        end
-    end)
-    RunService.Stepped:Connect(function()
-        if ncTog and p.Character then
-            for _, part in pairs(p.Character:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-        end
-    end)
-    UserInputService.JumpRequest:Connect(function()
-        if ijTog and p.Character and p.Character:FindFirstChild("Humanoid") then
-            p.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end)
-    Players.PlayerAdded:Connect(function(pl)
-        pl.CharacterAdded:Connect(function(char)
-            if AbangLibrary.Pengaturan["H_ESP"] then
-                task.wait(1)
-                local hl = Instance.new("Highlight"); hl.Name = "BoyESP"; hl.FillColor = Color3.fromRGB(255, 0, 0); hl.OutlineColor = Color3.fromRGB(255, 255, 255); hl.Parent = char
-            end
-        end)
-    end)
 
     function Window:BuildSettings()
         local st = self:MakeTab({Name = "⚙️ Settings"})
         st:AddButton({Name = "Save Config Manual", Callback = function() AbangLibrary:Save() end})
         st:AddButton({Name = "Hapus Hub", Callback = function() ScreenGui:Destroy() end})
     end
-
     return Window
 end
-
 return AbangLibrary
