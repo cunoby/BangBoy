@@ -1,9 +1,4 @@
---[[
-    TradeGUI.lua — LocalScript (Mobile Friendly + Error Safe)
-    Untuk Grow a Garden — Roblox
-    Cara pakai di executor:
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/cunoby/BangBoy/refs/heads/main/TradeGUI.lua"))()
-]]
+
 
 -- ============================================================
 -- SERVICES
