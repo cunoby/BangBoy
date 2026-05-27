@@ -140,22 +140,48 @@ local function AmbilUmurDiKebun(petId)
     return umur
 end
 
-local function ScanTas()
-    table.clear(FavPet) table.clear(NonFav)
-    local tas = LocalPlayer:FindFirstChild("Backpack")
-    if not tas then return end
-    for _, item in ipairs(tas:GetChildren()) do
-        if item:GetAttribute("ItemType") == "Pet" then
-            local uuid = item:GetAttribute("PET_UUID")
-            if uuid and uuid ~= "" then
-                local dataPet = {
-                    Id = uuid, Nama = item:GetAttribute("f") or item.Name,
-                    Umur = AmbilUmur(item), Teks = item.Name .. " [#" .. string.upper(string.sub(string.gsub(uuid, "[^%w]", ""), 1, 4)) .. "]",
-                }
-                if item:GetAttribute("d") == true then table.insert(FavPet, dataPet) else table.insert(NonFav, dataPet) end
+local function ScanKebun()
+    table.clear(PetKebun)
+    pcall(function()
+        -- 1. Baca fisik pet langsung dari Folder Server (Bypass UI Ditutup)
+        local physFolder = workspace:FindFirstChild("PetsPhysical")
+        if physFolder then
+            for _, item in ipairs(physFolder:GetChildren()) do
+                if string.find(item.Name, "-") then
+                    local uuid = item.Name
+                    -- Cek database: Kalau ada datanya, berarti ini pet milik kita
+                    local data = ActivePetsService:GetPetData(LocalPlayer.Name, uuid)
+                    if data and data.PetType then 
+                        local namaPet = data.PetType
+                        local uuidBersih = string.gsub(uuid, "[^%w]", "") 
+                        local uuidPendek = string.sub(uuidBersih, 1, 4) 
+                        local teksDropdown = namaPet .. " [#" .. string.upper(uuidPendek) .. "]"
+                        
+                        table.insert(PetKebun, { Id = uuid, Nama = namaPet, Teks = teksDropdown })
+                    end
+                end
             end
         end
-    end
+        
+        -- 2. (Opsional) Scan UI kalau folder fisik gagal
+        if #PetKebun == 0 then
+            local scrollingFrame = PlayerGui.ActivePetUI.Frame.Main.PetDisplay.ScrollingFrame
+            if scrollingFrame then
+                for _, item in ipairs(scrollingFrame:GetChildren()) do
+                    if string.find(item.Name, "-") then
+                        local uuid = item.Name
+                        local namaPet = "Unknown"
+                        local data = ActivePetsService:GetPetData(LocalPlayer.Name, uuid)
+                        if data and data.PetType then namaPet = data.PetType end
+                        local uuidBersih = string.gsub(uuid, "[^%w]", "") 
+                        local uuidPendek = string.sub(uuidBersih, 1, 4) 
+                        local teksDropdown = namaPet .. " [#" .. string.upper(uuidPendek) .. "]"
+                        table.insert(PetKebun, { Id = uuid, Nama = namaPet, Teks = teksDropdown })
+                    end
+                end
+            end
+        end
+    end)
 end
 
 local function InfoBahan()
