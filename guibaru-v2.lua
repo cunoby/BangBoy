@@ -38,7 +38,7 @@ local CycleCount = 0
 local WaktuStartBot = tick()
 local WaktuStartCycle = tick()
 local WebhookURL = ""
-local AntiAFKOn = true
+local AntiAFKOn = true -- Langsung aktif otomatis tanpa toggle UI
 
 -- ==========================================
 -- VARIABEL & SISTEM SADAP SERVER (SKILL CANCEL)
@@ -115,10 +115,8 @@ local function TarikSemuaPetDiAwal()
     print("[Sistem] Memulai pembersihan kebun otomatis...")
     pcall(function()
         local scrollingFrame = PlayerGui.ActivePetUI.Frame.Main.PetDisplay.ScrollingFrame
-        if scrollingFrame then
-            for _, item in ipairs(scrollingFrame:GetChildren()) do
-                if string.find(item.Name, "-") then PickupPet(item.Name) task.wait(0.1) end
-            end
+        for _, item in ipairs(scrollingFrame:GetChildren()) do
+            if string.find(item.Name, "-") then PickupPet(item.Name) task.wait(0.1) end
         end
     end)
 end
@@ -167,9 +165,12 @@ local function ScanKebun()
         local physFolder = workspace:FindFirstChild("PetsPhysical")
         if physFolder then
             for _, item in ipairs(physFolder:GetChildren()) do
-                if string.find(item.Name, "-") then
-                    local uuid = item.Name
-                    -- Cek database: Kalau ada datanya, berarti ini pet milik kita
+                -- Membaca tanda pengenal tersembunyi (Attribute) buatan developer
+                local owner = item:GetAttribute("OWNER")
+                local uuid = item:GetAttribute("UUID")
+                
+                -- Jika pet ini milik kita dan punya UUID yang valid
+                if owner == LocalPlayer.Name and uuid then
                     local data = ActivePetsService:GetPetData(LocalPlayer.Name, uuid)
                     if data and data.PetType then 
                         local namaPet = data.PetType
@@ -440,7 +441,7 @@ SecPickPlace:AddInput({ Title = "Delay To Pick", Content = "Jeda narik (0.5)", D
 SecPickPlace:AddInput({ Title = "Delay To Place", Content = "Jeda nanam (0.5)", Default = "0.5", Callback = function(Text) DelayToPlace = tonumber(Text) or 0.5 end })
 SecPickPlace:AddToggle({ Title = "▶️ MULAI SADAP SKILL", Content = "Bisa jalan bareng FSM atau mandiri!", Default = false, Callback = function(Value) AutoPickPlaceOn = Value end })
 
--- SECTION 6: SETTINGS & SECFITUR
+-- SECTION 6: SETTINGS & WEBHOOK (Anti-AFK Berjalan Otomatis di Background)
 local SecSet = TabSetting:AddSection("Webhook & Update", false)
 SecSet:AddInput({
     Title = "URL Webhook", Content = "Paste link Discord", Default = "",
@@ -656,22 +657,9 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
--- ==========================================
--- 7. BOOTING & INISIALISASI AWAL
--- ==========================================
 task.spawn(function()
-    -- 1. Tarik semua pet di kebun (jika ada)
     TarikSemuaPetDiAwal() 
-    
-    -- 2. Beri waktu toleransi (2.5 detik) agar server selesai 
-    -- mengembalikan SEMUA pet ke dalam tas karaktermu.
-    task.wait(2.5) 
-    
-    -- 3. Reset sensor pergerakan agar sistem tidak memblokir refresh UI
-    WaktuTerakhirGerak = 0 
-    
-    -- 4. Paksa UI untuk scan tas dan perbarui semua Dropdown
-    UpdateSemuaDropdown(true) 
-    
+    task.wait(0.5) -- Beri jeda setengah detik agar data tas server sinkron
+    UpdateSemuaDropdown(true) -- Parameter "true" akan memaksa UI refresh tanpa peduli sensor anti-lag
     Speed_Library:SetNotification({Title = "Berhasil", Description = "Injected", Content = "FSM Bot Ultimate Edition siap digunakan!", Time = 5})
 end)
