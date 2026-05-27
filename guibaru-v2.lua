@@ -115,8 +115,10 @@ local function TarikSemuaPetDiAwal()
     print("[Sistem] Memulai pembersihan kebun otomatis...")
     pcall(function()
         local scrollingFrame = PlayerGui.ActivePetUI.Frame.Main.PetDisplay.ScrollingFrame
-        for _, item in ipairs(scrollingFrame:GetChildren()) do
-            if string.find(item.Name, "-") then PickupPet(item.Name) task.wait(0.1) end
+        if scrollingFrame then
+            for _, item in ipairs(scrollingFrame:GetChildren()) do
+                if string.find(item.Name, "-") then PickupPet(item.Name) task.wait(0.1) end
+            end
         end
     end)
 end
@@ -138,6 +140,24 @@ local function AmbilUmurDiKebun(petId)
         if data and data.PetData then umur = data.PetData.Level end
     end)
     return umur
+end
+
+local function ScanTas()
+    table.clear(FavPet) table.clear(NonFav)
+    local tas = LocalPlayer:FindFirstChild("Backpack")
+    if not tas then return end
+    for _, item in ipairs(tas:GetChildren()) do
+        if item:GetAttribute("ItemType") == "Pet" then
+            local uuid = item:GetAttribute("PET_UUID")
+            if uuid and uuid ~= "" then
+                local dataPet = {
+                    Id = uuid, Nama = item:GetAttribute("f") or item.Name,
+                    Umur = AmbilUmur(item), Teks = item.Name .. " [#" .. string.upper(string.sub(string.gsub(uuid, "[^%w]", ""), 1, 4)) .. "]",
+                }
+                if item:GetAttribute("d") == true then table.insert(FavPet, dataPet) else table.insert(NonFav, dataPet) end
+            end
+        end
+    end
 end
 
 local function ScanKebun()
@@ -408,7 +428,7 @@ ToggleMesin = SecBahan:AddToggle({
 local SecPickPlace = TabMisc:AddSection("Skill Cancel (Sadap Mode)", false)
 local DropPickPlace 
 SecPickPlace:AddButton({
-    Title = "🔍 Scan Pet di Kebun", Content = "Tanam pet, lalu buka UI game & klik ini",
+    Title = "🔍 Scan Pet di Kebun", Content = "Tembus pandang tanpa buka UI game!",
     Callback = function()
         ScanKebun()
         if DropPickPlace then DropPickPlace:Refresh(AmbilDaftarNama(PetKebun), DropPickPlace.Value) end
@@ -421,14 +441,6 @@ SecPickPlace:AddInput({ Title = "Delay To Place", Content = "Jeda nanam (0.5)", 
 SecPickPlace:AddToggle({ Title = "▶️ MULAI SADAP SKILL", Content = "Bisa jalan bareng FSM atau mandiri!", Default = false, Callback = function(Value) AutoPickPlaceOn = Value end })
 
 -- SECTION 6: SETTINGS & SECFITUR
-local SecFitur = TabSetting:AddSection("Fitur Keamanan", false)
-SecFitur:AddToggle({ 
-    Title = "🛡️ Anti-AFK (Bypass 20 Menit)", 
-    Content = "Mencegah kick otomatis saat ditinggal tidur", 
-    Default = true, 
-    Callback = function(Value) AntiAFKOn = Value end 
-})
-
 local SecSet = TabSetting:AddSection("Webhook & Update", false)
 SecSet:AddInput({
     Title = "URL Webhook", Content = "Paste link Discord", Default = "",
@@ -634,7 +646,7 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- 6. SISTEM ANTI-AFK (MENCEGAH KICK 20 MENIT)
+-- 6. SISTEM ANTI-AFK (BERJALAN OTOMATIS)
 -- ==========================================
 LocalPlayer.Idled:Connect(function()
     if AntiAFKOn then
@@ -644,6 +656,9 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
+-- ==========================================
+-- 7. BOOTING & INISIALISASI AWAL
+-- ==========================================
 task.spawn(function()
     -- 1. Tarik semua pet di kebun (jika ada)
     TarikSemuaPetDiAwal() 
