@@ -422,13 +422,15 @@ SecSet:AddButton({
 -- ==========================================
 -- 4. SENSOR UI ANTI-LAG & CCTV
 -- ==========================================
-local function UpdateSemuaDropdown()
-    if tick() - WaktuTerakhirGerak < 3 then return end 
+local function UpdateSemuaDropdown(paksaRefresh)
+    -- Kalau tidak dipaksa, cek dulu apakah baru saja ada pergerakan pet
+    if not paksaRefresh and (tick() - WaktuTerakhirGerak < 3) then return end 
+    
     ScanTas()
-    DropGajah:Refresh(AmbilDaftarNama(FavPet), DropGajah.Value) 
-    DropLeveling:Refresh(AmbilDaftarNama(FavPet), DropLeveling.Value)
-    DropAge100:Refresh(AmbilDaftarNama(FavPet), DropAge100.Value) 
-    DropBahan:Refresh(AmbilDaftarNama(NonFav), DropBahan.Value)
+    if DropGajah then DropGajah:Refresh(AmbilDaftarNama(FavPet), DropGajah.Value) end
+    if DropLeveling then DropLeveling:Refresh(AmbilDaftarNama(FavPet), DropLeveling.Value) end
+    if DropAge100 then DropAge100:Refresh(AmbilDaftarNama(FavPet), DropAge100.Value) end
+    if DropBahan then DropBahan:Refresh(AmbilDaftarNama(NonFav), DropBahan.Value) end
 end
 
 local tas = LocalPlayer:WaitForChild("Backpack")
@@ -617,7 +619,18 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 task.spawn(function()
-    TarikSemuaPetDiAwal() ScanTas() 
-    UpdateSemuaDropdown()
+    -- 1. Tarik semua pet di kebun (jika ada)
+    TarikSemuaPetDiAwal() 
+    
+    -- 2. Beri waktu toleransi (2.5 detik) agar server selesai 
+    -- mengembalikan SEMUA pet ke dalam tas karaktermu.
+    task.wait(2.5) 
+    
+    -- 3. Reset sensor pergerakan agar sistem tidak memblokir refresh UI
+    WaktuTerakhirGerak = 0 
+    
+    -- 4. Paksa UI untuk scan tas dan perbarui semua Dropdown
+    UpdateSemuaDropdown(true) 
+    
     Speed_Library:SetNotification({Title = "Berhasil", Description = "Injected", Content = "FSM Bot Ultimate Edition siap digunakan!", Time = 5})
 end)
