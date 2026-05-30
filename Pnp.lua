@@ -1,5 +1,5 @@
 -- ==========================================
--- SCRIPT TESTER: AUTO PICK & PLACE (CCTV PRE-EMPTIVE STRIKE)
+-- SCRIPT AUTO FARM: GERY'S PIPELINE (TARGET TIME ENGINE)
 -- ==========================================
 local Speed_Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/cunoby/BangBoy/refs/heads/main/D.lua"))()
 local Players = game:GetService("Players")
@@ -9,18 +9,18 @@ local PlayerGui = LocalPlayer.PlayerGui
 local PetsService = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetsService")
 local ActivePetsService = require(ReplicatedStorage.Modules.PetServices.ActivePetsService)
 
--- VARIABEL
+-- VARIABEL MESIN
 local PetKebun = {}
 local PickPlacePets = {}
-local DelayToPick = 1.0
+local DelayToPick = 0.6 
 local DelayToPlace = 0.1
 local AutoPickPlaceOn = false
 
--- PENGAMAN & INGATAN
-local StatusTerakhirPet = {} 
+-- MEMORI WAKTU TARGET (os.clock) KHUSUS SLOT 1
+local TargetSelesaiPet = {} 
 local SedangDiProses = {}
 
--- FUNGSI KEBUN & SCAN
+-- FUNGSI KEBUN (CARI KOORDINAT)
 local function GetMyFarmCenter()
     local farmFolder = workspace:FindFirstChild("Farm") or workspace:FindFirstChild("Farms")
     if not farmFolder then return nil end
@@ -34,6 +34,7 @@ local function GetMyFarmCenter()
     return nil
 end
 
+-- FUNGSI SCAN UI
 local function ScanKebun()
     table.clear(PetKebun)
     pcall(function()
@@ -69,126 +70,137 @@ local function UpdateMultiSelectState(tabelSumber, daftarPilihanUI, tabelStateTa
     end
 end
 
--- FUNGSI CCTV: BACA TEKS UI
-local function CekCooldownPet(uuid)
-    local isReady = false
-    pcall(function()
-        local petFrame = PlayerGui.ActivePetUI.Frame.Main.PetDisplay.ScrollingFrame:FindFirstChild(uuid)
-        if petFrame then
-            local cdText = petFrame.Main.Cooldowns.COOLDOWN_1.COOLDOWN_NAME.Text
-            if string.find(string.lower(cdText), "ready") then
-                isReady = true
-            end
-        end
-    end)
-    return isReady
-end
-
+-- ==========================================
 -- PEMBUATAN UI
+-- ==========================================
 local Window = Speed_Library:CreateWindow({
     Title = "Tester Pick & Place",
-    Description = "CCTV Strike Sebelum Cooldown",
+    Description = "Jam Dunia / Target Time Engine",
     TabWidth = 140,
     SizeUi = UDim2.fromOffset(500, 320)
 })
 
 local TabMain = Window:CreateTab({Name = "Tester", Icon = "rbxassetid://7734010488"})
-local SecTest = TabMain:AddSection("Konfigurasi CCTV", false)
+local SecTest = TabMain:AddSection("Konfigurasi Alur", false)
 local DropPickPlace 
 
 SecTest:AddButton({
-    Title = "🔍 Scan Pet di Kebun", 
-    Content = "Tanam pet dulu, lalu klik ini",
+    Title = "🔍 Scan Pet dari Layar", 
+    Content = "Tanam pet, lalu klik ini",
     Callback = function()
         ScanKebun()
         if DropPickPlace then
             DropPickPlace:Refresh(AmbilDaftarNama(PetKebun), DropPickPlace.Value)
         end
-        Speed_Library:SetNotification({Title = "Scan Selesai", Description = "Berhasil", Content = "Daftar pet sudah diperbarui!", Time = 2})
+        Speed_Library:SetNotification({Title = "Scan Selesai", Description = "Berhasil", Content = "Pilih pet di bawah!", Time = 2})
     end
 })
 
 DropPickPlace = SecTest:AddDropdown({
-    Title = "Pilih Pet", Content = "Pilih dari hasil scan kebun", Multi = true, Options = {"Kosong"}, Default = {},
+    Title = "Pilih Pet", Content = "Pilih target eksekusi", Multi = true, Options = {"Kosong"}, Default = {},
     Callback = function(Options) UpdateMultiSelectState(PetKebun, Options, PickPlacePets) end 
 })
 
 SecTest:AddInput({
-    Title = "Delay To Pick", Content = "Jeda STELAH tulisan READY (1.0)", Default = "1.0",
-    Callback = function(Text) DelayToPick = tonumber(Text) or 1.0 end
+    Title = "Delay Tambahan", Content = "Jeda STELAH Jeda Wajib 1s", Default = "0.5",
+    Callback = function(Text) DelayToPick = tonumber(Text) or 0.5 end
 })
 
 SecTest:AddInput({
-    Title = "Delay To Place", Content = "Jeda masuk tas (0.1)", Default = "0.1",
+    Title = "Delay Tas", Content = "Jeda saat di dalam tas", Default = "0.1",
     Callback = function(Text) DelayToPlace = tonumber(Text) or 0.1 end
 })
 
 SecTest:AddToggle({
-    Title = "▶️ MULAI CCTV", Content = "Aktifkan eksekusi kilat", Default = false,
+    Title = "▶️ MULAI MESIN", Content = "Jalankan Auto Pick & Place", Default = false,
     Callback = function(Value) 
         AutoPickPlaceOn = Value 
         if Value then 
-            table.clear(StatusTerakhirPet) 
+            table.clear(TargetSelesaiPet) 
             table.clear(SedangDiProses)
+            print("🚀 [Sistem] Mesin Jam Dunia Dinyalakan!")
         end 
     end
 })
 
--- MESIN UTAMA CCTV (LOGIKA TRIGGER SAAT READY)
-task.spawn(function()
-    while task.wait(0.1) do 
-        if AutoPickPlaceOn and #PickPlacePets > 0 then
-            
-            for _, pet in ipairs(PickPlacePets) do
-                local uuid = pet.Id
-                
-                -- Lewati jika script dimatikan atau pet ini sedang dieksekusi timer-nya
-                if not AutoPickPlaceOn then break end
-                if SedangDiProses[uuid] then continue end 
-                
-                -- Baca layar saat ini
-                local apakahReadySekarang = CekCooldownPet(uuid)
-                local apakahReadySebelumnya = StatusTerakhirPet[uuid]
-                
-                -- Inisialisasi awal agar tidak error
-                if apakahReadySebelumnya == nil then
-                    StatusTerakhirPet[uuid] = apakahReadySekarang
-                    continue
-                end
-                
-                -- LOGIKA EMAS BARU (Sesuai idemu!):
-                -- Jika 0.1 detik yang lalu teksnya ANGKA, TAPI SEKARANG BERUBAH JADI "READY"
-                if apakahReadySebelumnya == false and apakahReadySekarang == true then
-                    
-                    -- Kunci pet ini agar tidak tertrigger berkali-kali
-                    SedangDiProses[uuid] = true
-                    
-                    task.spawn(function()
-                        -- 1. BERI WAKTU AGAR PET JALAN DAN MUKUL (Sesuai Input UI)
-                        task.wait(DelayToPick) 
-                        
-                        -- 2. TARIK PAKSA! (Dilakukan sebelum cooldown baru muncul)
-                        PetsService:FireServer("UnequipPet", uuid)
-                        
-                        -- 3. JEDA TRANSISI
-                        task.wait(DelayToPlace) 
-                        
-                        -- 4. TANAM KEMBALI
-                        local koordinat = GetMyFarmCenter()
-                        if koordinat then
-                            PetsService:FireServer("EquipPet", uuid, koordinat)
-                        end
-                        
-                        -- 5. BUKA PENGAMAN SETELAH SELESAI
-                        task.wait(0.5)
-                        SedangDiProses[uuid] = nil
-                    end)
-                end
-                
-                -- Simpan status saat ini untuk dicek di putaran berikutnya
-                StatusTerakhirPet[uuid] = apakahReadySekarang
-            end
-            
+-- ==========================================
+-- 1. RADAR SERVER (TENTUKAN TARGET JAM SELESAI)
+-- ==========================================
+local PetCooldownsUpdated = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetCooldownsUpdated")
+
+PetCooldownsUpdated.OnClientEvent:Connect(function(uuid, cdData)
+    if not AutoPickPlaceOn then return end
+    
+    if cdData then
+        -- Kunci target hanya ke Slot 1
+        local slotUtama = cdData[1] or cdData["1"]
+        
+        if slotUtama and type(slotUtama) == "table" and slotUtama.Time then
+            -- MENGGUNAKAN JAM DUNIA: Waktu sekarang + Cooldown dari server
+            local sisaWaktu = slotUtama.Time
+            TargetSelesaiPet[uuid] = os.clock() + sisaWaktu
         end
+    end
+end)
+
+-- ==========================================
+-- 2. PIPELINE ALUR EKSEKUSI (BISA BERPUTAR SANGAT CEPAT)
+-- ==========================================
+task.spawn(function()
+    -- Sekarang kita bisa pakai 0.1 untuk respon kilat tanpa merusak hitungan detik!
+    while task.wait(0.01) do
+        if not AutoPickPlaceOn then continue end
+        
+        local jamSekarang = os.clock()
+        local kumpulanPetReady = {}
+        
+        -- Cek target jam selesai semua pet terpilih
+        for _, pet in ipairs(PickPlacePets) do
+            local uuid = pet.Id
+            
+            if SedangDiProses[uuid] then continue end 
+            
+            local targetJam = TargetSelesaiPet[uuid]
+            
+            -- Jika jam dunia sekarang sudah melebihi atau sama dengan jam target
+            if targetJam and jamSekarang >= targetJam then
+                SedangDiProses[uuid] = true 
+                table.insert(kumpulanPetReady, uuid)
+            end
+        end
+        
+        -- PROSES ALUR BERUNTUN
+        if #kumpulanPetReady > 0 then
+            for urutan, uuid in ipairs(kumpulanPetReady) do
+                
+                task.spawn(function()
+                    task.wait((urutan - 1) * 0.1) 
+                    
+                    print("⚡ [Alur] Pet #" .. string.sub(uuid, 1, 4) .. " Ready! Eksekusi...")
+                    
+                    -- TAHAP 1 & 2: Tunggu 1s + Custom Delay
+                    task.wait(1 + DelayToPick)
+                    
+                    -- TAHAP 3: Tarik Paksa
+                    PetsService:FireServer("UnequipPet", uuid)
+                    
+                    -- TAHAP 4: Jeda Tas
+                    task.wait(DelayToPlace)
+                    
+                    -- TAHAP 5: Tanam Kembali
+                    local koordinat = GetMyFarmCenter()
+                    if koordinat then
+                        PetsService:FireServer("EquipPet", uuid, koordinat)
+                    end
+                    
+                    -- TAHAP 6: Buka Gembok (Target jam dinonaktifkan sampai ada sinyal baru)
+                    task.wait(0.01) 
+                    TargetSelesaiPet[uuid] = nil
+                    SedangDiProses[uuid] = nil
+                end)
+                
+            end
+        end
+        
     end
 end)
