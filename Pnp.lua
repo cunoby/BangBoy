@@ -148,7 +148,7 @@ end)
 -- ==========================================
 task.spawn(function()
     -- Sekarang kita bisa pakai 0.1 untuk respon kilat tanpa merusak hitungan detik!
-    while task.wait(0.01) do
+    while task.wait(0.05) do
         if not AutoPickPlaceOn then continue end
         
         local jamSekarang = os.clock()
@@ -175,8 +175,7 @@ task.spawn(function()
                 
                 task.spawn(function()
                     task.wait((urutan - 1) * 0.1) 
-                    
-                    print("⚡ [Alur] Pet #" .. string.sub(uuid, 1, 4) .. " Ready! Eksekusi...")
+                
                     
                     -- TAHAP 1 & 2: Tunggu 1s + Custom Delay
                     task.wait(1 + DelayToPick)
@@ -186,7 +185,11 @@ task.spawn(function()
                     
                     -- TAHAP 4: Jeda Tas
                     task.wait(DelayToPlace)
-                    
+
+                    TargetSelesaiPet[uuid] = nil
+
+
+
                     -- TAHAP 5: Tanam Kembali
                     local koordinat = GetMyFarmCenter()
                     if koordinat then
@@ -194,8 +197,8 @@ task.spawn(function()
                     end
                     
                     -- TAHAP 6: Buka Gembok (Target jam dinonaktifkan sampai ada sinyal baru)
-                    task.wait(0.01) 
-                    TargetSelesaiPet[uuid] = nil
+                    task.wait(0.05) 
+                    
                     SedangDiProses[uuid] = nil
                 end)
                 
