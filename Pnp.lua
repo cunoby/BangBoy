@@ -1,5 +1,5 @@
 -- ==========================================
--- SCRIPT TESTER: AUTO PICK & PLACE (EVENT INTERCEPTOR - SPEED HUB METHOD)
+-- SCRIPT TESTER: AUTO PICK & PLACE (CCTV PRE-EMPTIVE STRIKE)
 -- ==========================================
 local Speed_Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/cunoby/BangBoy/refs/heads/main/D.lua"))()
 local Players = game:GetService("Players")
@@ -12,10 +12,13 @@ local ActivePetsService = require(ReplicatedStorage.Modules.PetServices.ActivePe
 -- VARIABEL
 local PetKebun = {}
 local PickPlacePets = {}
-local DelayToPick = 0.5
-local DelayToPlace = 0.5
+local DelayToPick = 1.0
+local DelayToPlace = 0.1
 local AutoPickPlaceOn = false
-local SedangDiProses = {} -- Pengaman Anti-Spam
+
+-- PENGAMAN & INGATAN
+local StatusTerakhirPet = {} 
+local SedangDiProses = {}
 
 -- FUNGSI KEBUN & SCAN
 local function GetMyFarmCenter()
@@ -66,16 +69,31 @@ local function UpdateMultiSelectState(tabelSumber, daftarPilihanUI, tabelStateTa
     end
 end
 
+-- FUNGSI CCTV: BACA TEKS UI
+local function CekCooldownPet(uuid)
+    local isReady = false
+    pcall(function()
+        local petFrame = PlayerGui.ActivePetUI.Frame.Main.PetDisplay.ScrollingFrame:FindFirstChild(uuid)
+        if petFrame then
+            local cdText = petFrame.Main.Cooldowns.COOLDOWN_1.COOLDOWN_NAME.Text
+            if string.find(string.lower(cdText), "ready") then
+                isReady = true
+            end
+        end
+    end)
+    return isReady
+end
+
 -- PEMBUATAN UI
 local Window = Speed_Library:CreateWindow({
     Title = "Tester Pick & Place",
-    Description = "Event Interceptor (No UI CCTV)",
+    Description = "CCTV Strike Sebelum Cooldown",
     TabWidth = 140,
     SizeUi = UDim2.fromOffset(500, 320)
 })
 
 local TabMain = Window:CreateTab({Name = "Tester", Icon = "rbxassetid://7734010488"})
-local SecTest = TabMain:AddSection("Sistem Sadap Sinyal Server", false)
+local SecTest = TabMain:AddSection("Konfigurasi CCTV", false)
 local DropPickPlace 
 
 SecTest:AddButton({
@@ -96,77 +114,81 @@ DropPickPlace = SecTest:AddDropdown({
 })
 
 SecTest:AddInput({
-    Title = "Delay To Pick", Content = "Jeda saat ditarik (0.1)", Default = "0.1",
-    Callback = function(Text) DelayToPick = tonumber(Text) or 0.1 end
+    Title = "Delay To Pick", Content = "Jeda STELAH tulisan READY (1.0)", Default = "1.0",
+    Callback = function(Text) DelayToPick = tonumber(Text) or 1.0 end
 })
 
 SecTest:AddInput({
-    Title = "Delay To Place", Content = "Jeda saat ditanam (0.1)", Default = "0.1",
+    Title = "Delay To Place", Content = "Jeda masuk tas (0.1)", Default = "0.1",
     Callback = function(Text) DelayToPlace = tonumber(Text) or 0.1 end
 })
 
 SecTest:AddToggle({
-    Title = "▶️ MULAI TESTER", Content = "Sadap data cooldown server!", Default = false,
-    Callback = function(Value) AutoPickPlaceOn = Value end
+    Title = "▶️ MULAI CCTV", Content = "Aktifkan eksekusi kilat", Default = false,
+    Callback = function(Value) 
+        AutoPickPlaceOn = Value 
+        if Value then 
+            table.clear(StatusTerakhirPet) 
+            table.clear(SedangDiProses)
+        end 
+    end
 })
 
--- ==========================================
--- MESIN PENYADAP SERVER (100% PASIF, TANPA LOOPING!)
--- ==========================================
-local PetCooldownsUpdated = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetCooldownsUpdated")
-
-PetCooldownsUpdated.OnClientEvent:Connect(function(uuid, cdData)
-    -- 1. Matikan jika toggle belum nyala
-    if not AutoPickPlaceOn then return end
-    
-    -- 2. Matikan jika pet ini sedang kita proses agar tidak ditarik berkali-kali
-    if SedangDiProses[uuid] then return end
-    
-    -- 3. Cek apakah UUID ini ada di daftar pet yang kita pilih di Dropdown
-    local isTarget = false
-    for _, pet in ipairs(PickPlacePets) do
-        if pet.Id == uuid then isTarget = true break end
-    end
-    if not isTarget then return end
-    
-    -- 4. BEDAH DATA DARI SERVER (Sesuai dengan kode ActivePetsUIController yang kita temukan)
-    local baruSajaMukul = false
-    if cdData then
-        for _, slotData in pairs(cdData) do
-            if slotData and type(slotData) == "table" and slotData.Time then
-                -- FILTER CERDAS: Jika server memberi cooldown lebih dari 1.5 detik, 
-                -- berarti ini MURNI HASIL MUKUL TANAMAN (bukan cooldown pasang pet ke kebun)
-                if slotData.Time > 1.5 then
-                    baruSajaMukul = true
-                    break
+-- MESIN UTAMA CCTV (LOGIKA TRIGGER SAAT READY)
+task.spawn(function()
+    while task.wait(0.1) do 
+        if AutoPickPlaceOn and #PickPlacePets > 0 then
+            
+            for _, pet in ipairs(PickPlacePets) do
+                local uuid = pet.Id
+                
+                -- Lewati jika script dimatikan atau pet ini sedang dieksekusi timer-nya
+                if not AutoPickPlaceOn then break end
+                if SedangDiProses[uuid] then continue end 
+                
+                -- Baca layar saat ini
+                local apakahReadySekarang = CekCooldownPet(uuid)
+                local apakahReadySebelumnya = StatusTerakhirPet[uuid]
+                
+                -- Inisialisasi awal agar tidak error
+                if apakahReadySebelumnya == nil then
+                    StatusTerakhirPet[uuid] = apakahReadySekarang
+                    continue
                 end
+                
+                -- LOGIKA EMAS BARU (Sesuai idemu!):
+                -- Jika 0.1 detik yang lalu teksnya ANGKA, TAPI SEKARANG BERUBAH JADI "READY"
+                if apakahReadySebelumnya == false and apakahReadySekarang == true then
+                    
+                    -- Kunci pet ini agar tidak tertrigger berkali-kali
+                    SedangDiProses[uuid] = true
+                    
+                    task.spawn(function()
+                        -- 1. BERI WAKTU AGAR PET JALAN DAN MUKUL (Sesuai Input UI)
+                        task.wait(DelayToPick) 
+                        
+                        -- 2. TARIK PAKSA! (Dilakukan sebelum cooldown baru muncul)
+                        PetsService:FireServer("UnequipPet", uuid)
+                        
+                        -- 3. JEDA TRANSISI
+                        task.wait(DelayToPlace) 
+                        
+                        -- 4. TANAM KEMBALI
+                        local koordinat = GetMyFarmCenter()
+                        if koordinat then
+                            PetsService:FireServer("EquipPet", uuid, koordinat)
+                        end
+                        
+                        -- 5. BUKA PENGAMAN SETELAH SELESAI
+                        task.wait(0.5)
+                        SedangDiProses[uuid] = nil
+                    end)
+                end
+                
+                -- Simpan status saat ini untuk dicek di putaran berikutnya
+                StatusTerakhirPet[uuid] = apakahReadySekarang
             end
+            
         end
-    end
-    
-    -- 5. EKSEKUSI PENCURIAN JIKA TERBUKTI MUKUL!
-    if baruSajaMukul then
-        SedangDiProses[uuid] = true -- Kunci pet ini
-        
-        task.spawn(function()
-            -- Beri waktu sedikit untuk animasi damage mendarat (Diatur dari UI)
-            task.wait(DelayToPick) 
-            
-            -- TARIK PAKSA!
-            PetsService:FireServer("UnequipPet", uuid)
-            
-            -- JEDA TRANSISI
-            task.wait(DelayToPlace) 
-            
-            -- TANAM KEMBALI
-            local koordinat = GetMyFarmCenter()
-            if koordinat then
-                PetsService:FireServer("EquipPet", uuid, koordinat)
-            end
-            
-            -- Buka kunci setelah selesai
-            task.wait(0.2)
-            SedangDiProses[uuid] = nil
-        end)
     end
 end)
